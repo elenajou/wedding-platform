@@ -79,7 +79,10 @@ export default async function DashboardTabPage({ params }: Props) {
     const rows = await sql`SELECT * FROM wedding_photos WHERE wedding_id = ${wid} ORDER BY sort_order`
     content = <PhotosTab initialItems={rows as any[]} />
   } else if (tab === 'theme') {
-    const sectionRows = await sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`
+    const [sectionRows, detailRows] = await Promise.all([
+      sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`,
+      sql`SELECT * FROM wedding_details WHERE wedding_id = ${wid} LIMIT 1`,
+    ])
     const activeSectionKeys = [
       'envelope', 'hero',
       ...(config.features.countdown ? ['countdown'] : []),
@@ -95,6 +98,7 @@ export default async function DashboardTabPage({ params }: Props) {
         initialSections={sectionRows as any[]}
         enabledDesigns={config.enabledDesigns}
         activeSectionKeys={activeSectionKeys}
+        weddingDetails={detailRows[0] as any ?? null}
       />
     )
   }

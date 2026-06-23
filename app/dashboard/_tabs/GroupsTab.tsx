@@ -38,7 +38,7 @@ export default function GroupsTab({ initialItems }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this group? Guests in this group will lose their group assignment.')) return
+    if (!confirm('¿Eliminar este grupo? Los invitados perderán su asignación de grupo.')) return
     const res = await fetch(`/api/dashboard/groups/${id}`, { method: 'DELETE' })
     if (res.ok) setItems(i => i.filter(x => x.id !== id))
     else setError('Failed to delete')
@@ -48,22 +48,22 @@ export default function GroupsTab({ initialItems }: Props) {
 
   return (
     <div>
-      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Invitation Groups</p>
+      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Grupos de Invitación</p>
 
       <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        {[['Group name', 'name', 'text', 'Smith Family'], ['Seats', 'allocated_seats', 'number', '2'], ['Passcode', 'passcode', 'text', 'SMITH'], ['Language', 'language', 'text', 'en']].map(([lbl, key, type, ph]) => (
+        {[['Nombre del grupo', 'name', 'text', 'Familia García'], ['Lugares', 'allocated_seats', 'number', '2'], ['Contraseña', 'passcode', 'text', 'GARCIA'], ['Idioma', 'language', 'text', 'es']].map(([lbl, key, type, ph]) => (
           <div key={key as string}>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{lbl}</div>
             <input style={field} type={type as string} placeholder={ph as string} value={(form as any)[key as string]} onChange={e => setForm(f => ({ ...f, [key as string]: e.target.value }))} required={key === 'name'} min={key === 'allocated_seats' ? 1 : undefined} />
           </div>
         ))}
-        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Add</button>
+        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Agregar</button>
       </form>
 
       {error && <p style={{ color: '#c4614a', fontSize: 13, fontStyle: 'italic', marginBottom: 8 }}>{error}</p>}
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr><th style={th}>Name</th><th style={th}>Seats</th><th style={th}>Passcode</th><th style={th}>Lang</th><th style={th}></th></tr></thead>
+        <thead><tr><th style={th}>Nombre</th><th style={th}>Lugares</th><th style={th}>Contraseña</th><th style={th}>Idioma</th><th style={th}></th></tr></thead>
         <tbody>
           {items.map(item => editing?.id === item.id ? (
             <tr key={item.id}>
@@ -71,8 +71,8 @@ export default function GroupsTab({ initialItems }: Props) {
                 <td key={k} style={td}><input style={field} type={k === 'allocated_seats' ? 'number' : 'text'} value={(editing as any)[k]} onChange={e => setEditing(x => x && ({ ...x, [k]: e.target.value }))} /></td>
               ))}
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Save</button>
-                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancel</button>
+                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Guardar</button>
+                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancelar</button>
               </td>
             </tr>
           ) : (
@@ -82,12 +82,12 @@ export default function GroupsTab({ initialItems }: Props) {
               <td style={td}>{item.passcode ?? '—'}</td>
               <td style={td}>{item.language ?? '—'}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={() => editRow(item)} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Edit</button>
-                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Delete</button>
+                <button onClick={() => editRow(item)} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Editar</button>
+                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Eliminar</button>
               </td>
             </tr>
           ))}
-          {items.length === 0 && <tr><td colSpan={5} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>No groups yet.</td></tr>}
+          {items.length === 0 && <tr><td colSpan={5} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>Sin grupos aún.</td></tr>}
         </tbody>
       </table>
     </div>

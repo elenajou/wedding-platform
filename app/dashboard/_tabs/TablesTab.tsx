@@ -30,7 +30,7 @@ export default function TablesTab({ initialItems }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this table?')) return
+    if (!confirm('¿Eliminar esta mesa?')) return
     const res = await fetch(`/api/dashboard/tables/${id}`, { method: 'DELETE' })
     if (res.ok) setItems(i => i.filter(x => x.id !== id))
     else setError('Failed to delete')
@@ -41,26 +41,26 @@ export default function TablesTab({ initialItems }: Props) {
 
   return (
     <div>
-      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Tables</p>
+      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Mesas</p>
 
       <form onSubmit={handleAdd} style={{ display: 'flex', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        <div style={{ flex: 2 }}><div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>Table name</div><input style={field} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Table 1" required /></div>
-        <div style={{ flex: 1 }}><div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>Capacity</div><input style={field} type="number" min={1} value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} /></div>
-        <button type="submit" style={btn()}>Add</button>
+        <div style={{ flex: 2 }}><div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>Nombre de mesa</div><input style={field} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Mesa 1" required /></div>
+        <div style={{ flex: 1 }}><div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>Capacidad</div><input style={field} type="number" min={1} value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} /></div>
+        <button type="submit" style={btn()}>Agregar</button>
       </form>
 
       {error && <p style={{ color: '#c4614a', fontSize: 13, fontStyle: 'italic', marginBottom: 8 }}>{error}</p>}
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr><th style={th}>Name</th><th style={th}>Capacity</th><th style={th}></th></tr></thead>
+        <thead><tr><th style={th}>Nombre</th><th style={th}>Capacidad</th><th style={th}></th></tr></thead>
         <tbody>
           {items.map(item => editing?.id === item.id ? (
             <tr key={item.id}>
               <td style={td}><input style={field} value={editing.name} onChange={e => setEditing(x => x && ({ ...x, name: e.target.value }))} /></td>
               <td style={td}><input style={{ ...field, width: 70 }} type="number" value={editing.capacity} onChange={e => setEditing(x => x && ({ ...x, capacity: e.target.value }))} /></td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Save</button>
-                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancel</button>
+                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Guardar</button>
+                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancelar</button>
               </td>
             </tr>
           ) : (
@@ -68,12 +68,12 @@ export default function TablesTab({ initialItems }: Props) {
               <td style={td}>{item.name}</td>
               <td style={td}>{item.capacity}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={() => setEditing({ id: item.id, name: item.name, capacity: String(item.capacity) })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Edit</button>
-                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Delete</button>
+                <button onClick={() => setEditing({ id: item.id, name: item.name, capacity: String(item.capacity) })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Editar</button>
+                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Eliminar</button>
               </td>
             </tr>
           ))}
-          {items.length === 0 && <tr><td colSpan={3} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>No tables yet.</td></tr>}
+          {items.length === 0 && <tr><td colSpan={3} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>Sin mesas aún.</td></tr>}
         </tbody>
       </table>
     </div>

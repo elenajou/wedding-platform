@@ -36,7 +36,7 @@ export default function FaqTab({ initialItems }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this FAQ item?')) return
+    if (!confirm('¿Eliminar esta pregunta?')) return
     const res = await fetch(`/api/dashboard/faq/${id}`, { method: 'DELETE' })
     if (res.ok) setItems(i => i.filter(x => x.id !== id))
     else setError('Failed')
@@ -44,22 +44,22 @@ export default function FaqTab({ initialItems }: Props) {
 
   return (
     <div>
-      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>FAQ</p>
+      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Preguntas Frecuentes</p>
 
       <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '0.4fr 2fr 2fr auto', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        {[['#', 'sort_order', '0'], ['Question', 'question', 'What should I wear?'], ['Answer', 'answer', 'Smart casual.']].map(([lbl, k, ph]) => (
+        {[['#', 'sort_order', '0'], ['Pregunta', 'question', '¿Cuál es el código de vestimenta?'], ['Respuesta', 'answer', 'Formal.']].map(([lbl, k, ph]) => (
           <div key={k}>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{lbl}</div>
             <input style={field} placeholder={ph} value={(form as any)[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} required={k !== 'sort_order'} />
           </div>
         ))}
-        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Add</button>
+        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Agregar</button>
       </form>
 
       {error && <p style={{ color: '#c4614a', fontSize: 13, fontStyle: 'italic', marginBottom: 8 }}>{error}</p>}
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr><th style={th}>#</th><th style={th}>Question</th><th style={th}>Answer</th><th style={th}></th></tr></thead>
+        <thead><tr><th style={th}>#</th><th style={th}>Pregunta</th><th style={th}>Respuesta</th><th style={th}></th></tr></thead>
         <tbody>
           {items.map(item => editing?.id === item.id ? (
             <tr key={item.id}>
@@ -67,8 +67,8 @@ export default function FaqTab({ initialItems }: Props) {
               <td style={td}><textarea style={{ ...field, resize: 'vertical', minHeight: 60 }} value={editing.question} onChange={e => setEditing(x => x && ({ ...x, question: e.target.value }))} /></td>
               <td style={td}><textarea style={{ ...field, resize: 'vertical', minHeight: 60 }} value={editing.answer} onChange={e => setEditing(x => x && ({ ...x, answer: e.target.value }))} /></td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Save</button>
-                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancel</button>
+                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Guardar</button>
+                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancelar</button>
               </td>
             </tr>
           ) : (
@@ -77,12 +77,12 @@ export default function FaqTab({ initialItems }: Props) {
               <td style={{ ...td, fontStyle: 'italic' }}>{item.question}</td>
               <td style={{ ...td, color: '#4b4331' }}>{item.answer}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), question: item.question, answer: item.answer })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Edit</button>
-                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Delete</button>
+                <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), question: item.question, answer: item.answer })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Editar</button>
+                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Eliminar</button>
               </td>
             </tr>
           ))}
-          {items.length === 0 && <tr><td colSpan={4} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>No FAQ items yet.</td></tr>}
+          {items.length === 0 && <tr><td colSpan={4} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>Sin preguntas aún.</td></tr>}
         </tbody>
       </table>
     </div>

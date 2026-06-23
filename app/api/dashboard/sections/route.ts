@@ -36,6 +36,7 @@ export async function PUT(req: NextRequest) {
       background_color?: string | null
       font_color?: string | null
       overlay_opacity?: number
+      visible?: boolean
     }[] = await req.json()
 
     const updated = []
@@ -49,7 +50,8 @@ export async function PUT(req: NextRequest) {
               background_url   = ${row.background_url ?? null},
               background_color = ${row.background_color ?? null},
               font_color       = ${row.font_color ?? null},
-              overlay_opacity  = ${row.overlay_opacity ?? 0.32}
+              overlay_opacity  = ${row.overlay_opacity ?? 0.32},
+              visible          = ${row.visible ?? true}
           WHERE id = ${row.id} AND wedding_id = ${session.weddingId}
           RETURNING *
         `
@@ -58,12 +60,13 @@ export async function PUT(req: NextRequest) {
         const r = await sql`
           INSERT INTO section_config
             (wedding_id, section_key, sort_order, design, color_scheme,
-             background_url, background_color, font_color, overlay_opacity)
+             background_url, background_color, font_color, overlay_opacity, visible)
           VALUES
             (${session.weddingId}, ${row.section_key}, ${row.sort_order},
              ${row.design ?? 'Classic'}, ${row.color_scheme ?? 'Gold'},
              ${row.background_url ?? null}, ${row.background_color ?? null},
-             ${row.font_color ?? null}, ${row.overlay_opacity ?? 0.32})
+             ${row.font_color ?? null}, ${row.overlay_opacity ?? 0.32},
+             ${row.visible ?? true})
           ON CONFLICT (wedding_id, section_key) DO UPDATE SET
             sort_order       = EXCLUDED.sort_order,
             design           = EXCLUDED.design,
@@ -71,7 +74,8 @@ export async function PUT(req: NextRequest) {
             background_url   = EXCLUDED.background_url,
             background_color = EXCLUDED.background_color,
             font_color       = EXCLUDED.font_color,
-            overlay_opacity  = EXCLUDED.overlay_opacity
+            overlay_opacity  = EXCLUDED.overlay_opacity,
+            visible          = EXCLUDED.visible
           RETURNING *
         `
         if (r[0]) updated.push(r[0])

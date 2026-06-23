@@ -28,6 +28,7 @@ type SectionCfg = {
   overlayOpacity: number
   design: string
   colorScheme: string
+  visible?: boolean
 }
 
 type Props = {
@@ -155,9 +156,9 @@ export default function InvitationClient({ dict, lang, weddingDetails, features 
     }),
   }
 
-  const orderedKeys = Object.keys(sectionMap).sort(
-    (a, b) => cfg(a).sortOrder - cfg(b).sortOrder
-  )
+  const orderedKeys = Object.keys(sectionMap)
+    .filter(key => cfg(key).visible !== false)
+    .sort((a, b) => cfg(a).sortOrder - cfg(b).sortOrder)
 
   return (
     <>

@@ -12,10 +12,25 @@ import ScheduleTab from '@/app/dashboard/_tabs/ScheduleTab'
 import FaqTab from '@/app/dashboard/_tabs/FaqTab'
 import PhotosTab from '@/app/dashboard/_tabs/PhotosTab'
 import ThemeTab from '@/app/dashboard/_tabs/ThemeTab'
+import SectionsTab from '@/app/dashboard/_tabs/SectionsTab'
 
 type Props = { params: Promise<{ tab: string }> }
 
-const BASE_TABS = ['wedding', 'tables', 'groups', 'guests', 'theme']
+const BASE_TABS = ['wedding', 'tables', 'groups', 'guests', 'sections', 'theme']
+
+const TAB_LABELS: Record<string, string> = {
+  wedding: 'Boda',
+  tables: 'Mesas',
+  groups: 'Grupos',
+  guests: 'Invitados',
+  sections: 'Secciones',
+  theme: 'Tema',
+  rsvps: 'Confirmaciones',
+  schedule: 'Agenda',
+  faq: 'FAQ',
+  photos: 'Fotos',
+  video: 'Video',
+}
 
 const nav: React.CSSProperties = {
   borderBottom: '0.5px solid #e0d8c8',
@@ -53,7 +68,7 @@ export default async function DashboardTabPage({ params }: Props) {
 
   if (tab === 'wedding') {
     const rows = await sql`SELECT * FROM wedding_details WHERE wedding_id = ${wid} LIMIT 1`
-    content = <WeddingTab initialData={rows[0] ?? null} />
+    content = <WeddingTab initialData={rows[0] ?? null} locales={config.locales} />
   } else if (tab === 'tables') {
     const rows = await sql`SELECT * FROM wedding_tables WHERE wedding_id = ${wid} ORDER BY created_at`
     content = <TablesTab initialItems={rows as any[]} />
@@ -78,6 +93,19 @@ export default async function DashboardTabPage({ params }: Props) {
   } else if (tab === 'photos') {
     const rows = await sql`SELECT * FROM wedding_photos WHERE wedding_id = ${wid} ORDER BY sort_order`
     content = <PhotosTab initialItems={rows as any[]} />
+  } else if (tab === 'sections') {
+    const rows = await sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`
+    const activeSectionKeys = [
+      'envelope', 'hero',
+      ...(config.features.countdown ? ['countdown'] : []),
+      ...(config.features.seatingCard ? ['seating'] : []),
+      ...(config.features.rsvp ? ['rsvp'] : []),
+      ...(config.features.schedule ? ['schedule'] : []),
+      ...(config.features.videoSection ? ['video'] : []),
+      ...(config.features.gallery ? ['gallery'] : []),
+      ...(config.features.faq ? ['faq'] : []),
+    ]
+    content = <SectionsTab initialSections={rows as any[]} activeSectionKeys={activeSectionKeys} />
   } else if (tab === 'theme') {
     const [sectionRows, detailRows] = await Promise.all([
       sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`,
@@ -113,7 +141,7 @@ export default async function DashboardTabPage({ params }: Props) {
             borderBottom: t === tab ? '1px solid #201d19' : 'none',
             paddingBottom: 2, whiteSpace: 'nowrap',
           }}>
-            {t}
+            {TAB_LABELS[t] ?? t}
           </a>
         ))}
         <span style={{ flex: 1 }} />

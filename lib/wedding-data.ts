@@ -25,6 +25,7 @@ export type WeddingDetails = {
   video_source_type: 'youtube' | 'vimeo' | 'self' | null
   video_source_id: string | null
   video_poster_url: string | null
+  locale_content: Record<string, Record<string, string>>
 }
 
 export type ScheduleEvent = {
@@ -53,6 +54,7 @@ export type SectionConfig = {
   overlayOpacity: number
   design: string
   colorScheme: string
+  visible: boolean
 }
 
 export type SectionConfigMap = Record<string, SectionConfig>
@@ -94,7 +96,7 @@ export async function getWeddingFAQ(weddingId: string): Promise<FAQItem[]> {
 export async function getSectionConfig(weddingId: string): Promise<SectionConfigMap> {
   const rows = await sql`
     SELECT section_key, design, color_scheme, background_url, background_color,
-           font_color, overlay_opacity, sort_order
+           font_color, overlay_opacity, sort_order, visible
     FROM section_config
     WHERE wedding_id = ${weddingId}
   `
@@ -108,6 +110,7 @@ export async function getSectionConfig(weddingId: string): Promise<SectionConfig
       overlayOpacity: (row.overlay_opacity as number) ?? 0.32,
       design: (row.design as string) || 'Classic',
       colorScheme: (row.color_scheme as string) || 'Gold',
+      visible: (row.visible as boolean) !== false,
     }
   }
   return map

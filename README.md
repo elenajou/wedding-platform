@@ -1,64 +1,37 @@
 # Wedding Platform
 
-Multi-tenant wedding invitation SaaS. One codebase serves many couples — each with their own domain, theme, language, and feature set.
+Multi-tenant wedding invitation SaaS. One codebase, one deployment — each couple gets their own domain, language, theme, and feature set.
 
-Built with Next.js 16 (App Router), NeonDB, and Firebase App Hosting.
-
----
-
-## Prerequisites
-
-- Node.js 20+
-- A [NeonDB](https://neon.tech) project (free tier works)
-- npm
+**Stack:** Next.js 16 App Router · NeonDB · Firebase App Hosting
 
 ---
 
-## 1. Clone and install
+## Setup
+
+### 1. Clone and install
 
 ```bash
-git clone <your-repo-url>
+git clone <repo-url>
 cd wedding-platform
 npm install
 ```
 
----
-
-## 2. Environment variables
-
-Copy the example file and fill in your values:
+### 2. Environment variables
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Open `.env.local` and set:
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | NeonDB connection string (from Neon dashboard → Connection string) |
+| `SUPER_ADMIN_PASSWORD` | Password for `/super-admin` |
+| `DASHBOARD_JWT_SECRET` | Min 32 chars — `openssl rand -base64 32` |
+| `PLATFORM_DOMAIN` | Your root domain (e.g. `platform.com`) for subdomain routing |
 
-```env
-# NeonDB — get this from your Neon project dashboard → Connection string
-DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+### 3. Apply schema
 
-# Super-admin password (protects /super-admin)
-SUPER_ADMIN_PASSWORD=choose-a-strong-password
-
-# JWT secret for couple dashboard sessions (min 32 random characters)
-DASHBOARD_JWT_SECRET=generate-with-openssl-rand-base64-32
-
-# Your platform's root domain (used for subdomain routing in production)
-PLATFORM_DOMAIN=platform.com
-```
-
-Generate a secure JWT secret:
-
-```bash
-openssl rand -base64 32
-```
-
----
-
-## 3. Run the database schema
-
-This creates all tables in your Neon database. Run it once on a fresh project:
+Run once on a fresh database:
 
 ```bash
 node -e "
@@ -77,11 +50,11 @@ const stmts = schema.split(';').map(s => s.trim()).filter(s => s.length > 0 && !
 "
 ```
 
----
+When columns are added in future updates, re-run this — existing tables are skipped, only new columns/tables are added.
 
-## 4. Seed a local dev wedding
+### 4. Seed a local dev wedding
 
-The app resolves tenants by the `Host` header. In local dev, the host is `localhost`, so create a wedding with slug `localhost`:
+The app resolves tenants by the `Host` header. Use slug `localhost` for local dev:
 
 ```bash
 node -e "
@@ -92,71 +65,106 @@ const sql = neon(process.env.DATABASE_URL)
   const rows = await sql\`
     INSERT INTO weddings (slug, domains, default_locale, locales, active,
       feature_rsvp, feature_countdown, feature_gallery, feature_schedule,
-      feature_faq, feature_seating_card, feature_video_section,
-      dashboard_password_hash)
-    VALUES ('localhost', ARRAY[]::text[], 'en', ARRAY['en','es','zh'],
-      true, true, true, false, true, true, true, false, '')
-    ON CONFLICT (slug) DO NOTHING
-    RETURNING id, slug
+      feature_faq, feature_seating_card, feature_video_section, dashboard_password_hash)
+    VALUES ('localhost', ARRAY[]::text[], 'en', ARRAY['en'], true,
+      true, true, false, true, true, true, false, '')
+    ON CONFLICT (slug) DO NOTHING RETURNING id
   \`
   if (!rows[0]) { console.log('Already exists.'); return }
-  await sql\`INSERT INTO wedding_details (wedding_id, bride_name, groom_name) VALUES (\${rows[0].id}, 'Bride', 'Groom')\`
-  const sections = ['hero','countdown','seating','rsvp','schedule','faq']
+  await sql\`INSERT INTO wedding_details (wedding_id, bride_name, groom_name) VALUES (\${rows[0].id}, 'Bride', 'Groom') ON CONFLICT DO NOTHING\`
+  const sections = ['envelope','hero','countdown','seating','rsvp','schedule','faq']
   for (const [i, key] of sections.entries()) {
     await sql\`INSERT INTO section_config (wedding_id, section_key, sort_order, design, color_scheme) VALUES (\${rows[0].id}, \${key}, \${i * 10}, 'Classic', 'Gold') ON CONFLICT (wedding_id, section_key) DO NOTHING\`
   }
-  console.log('Seeded. Wedding ID:', rows[0].id)
+  console.log('Done. Wedding ID:', rows[0].id)
 })()
 "
 ```
 
----
-
-## 5. Run the dev server
+### 5. Run
 
 ```bash
 npm run dev
+# → http://localhost:3000
 ```
 
-Open [http://localhost:3001](http://localhost:3001) (or 3000 if the port is free).
-
 ---
 
-## How tenant routing works
+## Adding a new couple
 
-| Request host | How it resolves |
-|---|---|
-| `localhost:3001` | Slug match: `localhost` |
-| `john-sarah.platform.com` | Slug match: `john-sarah` |
-| `johnandsarah.com` | Exact domain match in `domains[]` |
-
-The proxy (`proxy.ts`) reads the `Host` header on every request, looks up the matching wedding from the in-memory cache (refreshed every 5 minutes from the `weddings` table), and injects `x-wedding-id` into request headers. All server components and API routes read from that header — no prop drilling, no cookies for tenant identity.
-
----
-
-## Adding a new wedding (production)
-
-Use the super-admin dashboard at `/super-admin`, or call the API directly:
+Use `/super-admin` (recommended) or the API:
 
 ```bash
-curl -X POST https://your-domain/api/super-admin/weddings \
+curl -X POST https://your-platform.com/api/super-admin/weddings \
   -H "Content-Type: application/json" \
-  -H "Cookie: super_admin_session=<your-session-cookie>" \
+  -H "Cookie: super_admin_session=<cookie>" \
   -d '{
-    "slug": "john-sarah",
-    "domains": ["johnandsarah.com"],
-    "defaultLocale": "en",
-    "locales": ["en", "es"],
-    "dashboardPassword": "couple-password",
+    "slug": "sofia-carlos",
+    "domains": ["sofiaycarloss.com"],
+    "defaultLocale": "es",
+    "locales": ["es", "en"],
+    "dashboardPassword": "their-password",
     "features": {
-      "rsvp": true, "countdown": true, "gallery": true,
-      "schedule": true, "faq": true, "seatingCard": true,
-      "videoSection": false, "guestbook": false, "maps": false, "qrCode": false
+      "rsvp": true, "countdown": true, "gallery": true, "schedule": true,
+      "faq": true, "seatingCard": true, "videoSection": false,
+      "guestbook": false, "maps": false, "qrCode": false
     }
   }'
 ```
 
-This creates the `weddings` row and seeds an empty `wedding_details` row. The couple can then log in at `/dashboard` with their slug and password.
+This creates the `weddings` row and an empty `wedding_details` row. The couple logs in at `/dashboard` with their slug + password.
+
+### Setting up a custom domain
+
+1. Add the domain in `/super-admin/weddings/[id]` → Domains field
+2. Have the couple point DNS to your Firebase hosting URL:
+   - Add a `CNAME`: `sofiaycarloss.com → <firebase-hosting-domain>`
+   - Or configure a custom domain in Firebase console → App Hosting
+3. Routing is automatic — the middleware matches the `Host` header against `domains[]`
+
+Subdomains on your platform domain (`sofia-carlos.platform.com`) work automatically without DNS setup.
+
+### Tenant routing summary
+
+| Request host | How it resolves |
+|---|---|
+| `localhost:3000` | Slug match: `localhost` |
+| `sofia-carlos.platform.com` | Slug extracted from subdomain |
+| `sofiaycarloss.com` | Exact match in `domains[]` |
+
+### Enabling features
+
+In `/super-admin/weddings/[id]`, toggle features per couple:
+
+| Feature flag | What it unlocks |
+|---|---|
+| RSVP | Confirmation form in invitation + Confirmaciones tab |
+| Countdown | Countdown timer section |
+| Gallery | Photo gallery section + Fotos tab |
+| Schedule | Day schedule section + Agenda tab |
+| FAQ | FAQ accordion + FAQ tab |
+| Seating card | Seating assignment section |
+| Video section | Video embed section |
+
+### Multiple languages
+
+1. In `/super-admin/weddings/[id]`, set Locales to e.g. `en,zh` or `es,en`
+2. The couple's Boda tab will show extra text fields for each additional locale (hero text, letter text)
+3. Guests switch language via the language switcher in the invitation
+
+Supported: `en` (English), `es` (Español), `zh` (中文)
+
+### Template visibility per couple
+
+In `/super-admin/weddings/[id]` → Template Visibility, restrict which design variants are available to a specific couple (e.g. only show "Classic" and "Minimal" templates).
+
+### Separate database per client (optional)
+
+All weddings share one NeonDB by default, isolated by `wedding_id` foreign keys. For strict data-residency requirements:
+
+1. Create a new Neon project for the client
+2. Run `sql/schema.sql` against it
+3. Add a `DATABASE_URL_<SLUG>` env var and update `lib/db.ts` to select the connection based on wedding ID
 
 ---
 
@@ -164,198 +172,63 @@ This creates the `weddings` row and seeds an empty `wedding_details` row. The co
 
 ### Super-admin — `/super-admin`
 
-Elena's platform dashboard. Manages all weddings.
+Manage all weddings. Auth: `SUPER_ADMIN_PASSWORD` env var → session cookie.
 
-| URL | What it does |
+| URL | Purpose |
 |---|---|
-| `/super-admin/login` | Sign in with `SUPER_ADMIN_PASSWORD` |
+| `/super-admin/login` | Sign in |
 | `/super-admin` | List all weddings |
-| `/super-admin/weddings/new` | Create a new wedding |
-| `/super-admin/weddings/[id]` | Edit features, domains, locales, password |
-
-Auth: `SUPER_ADMIN_PASSWORD` env var → HTTP-only `super_admin_session` cookie.
-
----
+| `/super-admin/weddings/new` | Create a wedding |
+| `/super-admin/weddings/[id]` | Edit features, locales, domains, password, templates |
 
 ### Couple dashboard — `/dashboard`
 
-Per-couple admin scoped to their wedding. Tabs shown depend on which features are enabled for that wedding.
+All labels in Spanish. Tabs shown depend on enabled features. Auth: slug + password → JWT cookie.
 
-| URL | What it does |
-|---|---|
-| `/dashboard/login` | Sign in with slug + password |
-| `/dashboard/wedding` | Edit wedding details (names, date, venue, video, etc.) |
-| `/dashboard/tables` | Manage seating tables |
-| `/dashboard/groups` | Manage invitation groups + passcodes |
-| `/dashboard/guests` | Manage guest list |
-| `/dashboard/rsvps` | View RSVP responses *(requires `rsvp: true`)* |
-| `/dashboard/schedule` | Edit day-of schedule *(requires `schedule: true`)* |
-| `/dashboard/faq` | Edit FAQ items *(requires `faq: true`)* |
-| `/dashboard/photos` | Manage gallery photos *(requires `gallery: true`)* |
-| `/dashboard/video` | Edit video source *(requires `videoSection: true`)* |
-
-Auth: slug + password → JWT `dashboard_session` cookie (7-day expiry).
-
----
-
-## API Reference
-
-All API routes are scoped to the current tenant via the `x-wedding-id` request header set by the proxy. You never pass a wedding ID in the request body.
-
-### Public (no auth required)
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/api/lookup` | `{ phone?, passcode?, lang? }` | Look up guest by phone or group passcode |
-| `POST` | `/api/rsvp` | `{ groupId, attending, guestCount, guestAttendance?, message?, rsvpedBy? }` | Submit RSVP |
-
-### Auth
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/dashboard` | `{ slug, password }` | Log in to couple dashboard → sets `dashboard_session` cookie |
-| `DELETE` | `/api/auth/dashboard` | — | Log out of couple dashboard |
-| `POST` | `/api/auth/super-admin` | `{ password }` | Log in to super-admin → sets `super_admin_session` cookie |
-| `DELETE` | `/api/auth/super-admin` | — | Log out of super-admin |
-
-### Couple dashboard (requires `dashboard_session` cookie)
-
-**Wedding details**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/wedding-details` | — | Get current wedding details row |
-| `PUT` | `/api/dashboard/wedding-details` | any `wedding_details` fields | Update wedding details (partial — unset fields keep existing value) |
-
-**Section config**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/sections` | — | List all section configs ordered by `sort_order` |
-| `PUT` | `/api/dashboard/sections` | `[{ id, sort_order, design?, color_scheme?, background_url?, background_color?, font_color?, overlay_opacity? }]` | Bulk update section configs |
-
-**Groups**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/groups` | — | List all invitation groups |
-| `POST` | `/api/dashboard/groups` | `{ name, allocated_seats, passcode?, language? }` | Create group |
-| `PUT` | `/api/dashboard/groups/[id]` | `{ name, allocated_seats, passcode?, language? }` | Update group |
-| `DELETE` | `/api/dashboard/groups/[id]` | — | Delete group |
-
-**Guests**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/guests` | — | List all guests (includes `group_name`) |
-| `POST` | `/api/dashboard/guests` | `{ name, phone?, email?, group_id?, table_name?, language? }` | Create guest |
-| `PUT` | `/api/dashboard/guests/[id]` | `{ name, phone?, email?, group_id?, table_name?, language? }` | Update guest |
-| `DELETE` | `/api/dashboard/guests/[id]` | — | Delete guest |
-
-**Tables**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/tables` | — | List all seating tables |
-| `POST` | `/api/dashboard/tables` | `{ name, capacity? }` | Create table (default capacity: 8) |
-| `PUT` | `/api/dashboard/tables/[id]` | `{ name, capacity }` | Update table |
-| `DELETE` | `/api/dashboard/tables/[id]` | — | Delete table |
-
-**RSVPs**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/rsvps` | — | List all RSVPs (includes `group_name`, `allocated_seats`) |
-| `DELETE` | `/api/dashboard/rsvps/[id]` | — | Delete RSVP |
-
-**Schedule**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/schedule` | — | List all schedule events ordered by `sort_order` |
-| `POST` | `/api/dashboard/schedule` | `{ time_label, iso_time, event_name, description?, sort_order? }` | Create event |
-| `PUT` | `/api/dashboard/schedule/[id]` | `{ time_label, iso_time, event_name, description?, sort_order }` | Update event |
-| `DELETE` | `/api/dashboard/schedule/[id]` | — | Delete event |
-
-**FAQ**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/faq` | — | List all FAQ items ordered by `sort_order` |
-| `POST` | `/api/dashboard/faq` | `{ question, answer, sort_order? }` | Create FAQ item |
-| `PUT` | `/api/dashboard/faq/[id]` | `{ question, answer, sort_order }` | Update FAQ item |
-| `DELETE` | `/api/dashboard/faq/[id]` | — | Delete FAQ item |
-
-**Photos**
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/dashboard/photos` | — | List all photos ordered by `sort_order` |
-| `POST` | `/api/dashboard/photos` | `{ src, alt, caption?, sort_order? }` | Add photo |
-| `PUT` | `/api/dashboard/photos/[id]` | `{ src, alt, caption?, sort_order }` | Update photo |
-| `DELETE` | `/api/dashboard/photos/[id]` | — | Delete photo |
-
-### Super-admin (requires `super_admin_session` cookie)
-
-| Method | Path | Body | Description |
-|---|---|---|---|
-| `GET` | `/api/super-admin/weddings` | — | List all weddings |
-| `POST` | `/api/super-admin/weddings` | `{ slug, domains, defaultLocale, locales, dashboardPassword, features }` | Create wedding + seed `wedding_details` row |
-| `PUT` | `/api/super-admin/weddings/[id]` | `{ domains, defaultLocale, locales, dashboardPassword?, features }` | Update wedding config |
-| `DELETE` | `/api/super-admin/weddings/[id]` | — | Delete wedding (cascades all related rows) |
-
-`features` object shape:
-```json
-{
-  "rsvp": true,
-  "countdown": true,
-  "gallery": false,
-  "guestbook": false,
-  "maps": false,
-  "qrCode": false,
-  "videoSection": false,
-  "schedule": true,
-  "faq": true,
-  "seatingCard": true
-}
-```
+| Tab | Path | Feature required |
+|---|---|---|
+| Boda | `/dashboard/wedding` | always |
+| Mesas | `/dashboard/tables` | always |
+| Grupos | `/dashboard/groups` | always |
+| Invitados | `/dashboard/guests` | always |
+| Secciones | `/dashboard/sections` | always |
+| Tema | `/dashboard/theme` | always |
+| Confirmaciones | `/dashboard/rsvps` | rsvp |
+| Agenda | `/dashboard/schedule` | schedule |
+| FAQ | `/dashboard/faq` | faq |
+| Fotos | `/dashboard/photos` | gallery |
 
 ---
 
 ## Project structure
 
 ```
-proxy.ts                  — tenant resolution + lang redirect (runs on every request)
+middleware.ts / proxy.ts    — tenant resolution; injects x-wedding-id on every request
 lib/
-  db.ts                   — NeonDB client (sql tagged template)
-  tenant.ts               — WeddingConfig cache, resolveConfigByHost()
-  wedding-data.ts         — all DB fetchers (weddingId-scoped)
-  auth.ts                 — JWT helpers for dashboard + super-admin sessions
-  i18n.ts                 — locale detection, t() interpolation
-  revalidate.ts           — revalidateWeddingPages() after content edits
+  db.ts                     — NeonDB tagged-template SQL client
+  tenant.ts                 — in-memory config cache (5 min TTL), resolveConfigByHost()
+  wedding-data.ts           — DB fetchers scoped to weddingId
+  auth.ts                   — JWT helpers (dashboard + super-admin sessions)
+  i18n.ts                   — locale detection, t() string interpolation
+  revalidate.ts             — revalidates public pages after content changes
 app/
-  [lang]/                 — public invitation (tenant-aware, i18n)
-  dashboard/              — per-couple admin (auth: slug + password → JWT cookie)
-  super-admin/            — platform owner admin (auth: SUPER_ADMIN_PASSWORD)
-  api/
-    lookup/               — guest lookup by phone or passcode
-    rsvp/                 — RSVP submission
-    auth/                 — dashboard + super-admin login/logout
-    dashboard/            — per-wedding CRUD (guests, groups, tables, schedule, etc.)
-    super-admin/          — wedding management (create, update features/domains)
-components/               — invitation UI components (EnvelopeGate, Hero, Countdown, etc.)
-themes/                   — color schemes + section design registry
+  [lang]/                   — public invitation (tenant-aware, i18n)
+  dashboard/                — couple admin
+  super-admin/              — platform owner admin
+  api/                      — REST API (lookup, rsvp, auth, dashboard/*, super-admin/*)
+components/                 — invitation UI sections (Hero, Countdown, RSVP, etc.)
+themes/                     — color schemes + design variant registry
 sql/
-  schema.sql              — full database schema
-  rls.sql                 — optional RLS policies
+  schema.sql                — full DB schema (run on setup and after updates)
+  rls.sql                   — optional Supabase RLS policies
 ```
 
 ---
 
-## Deployment (Firebase App Hosting)
+## Deploy (Firebase App Hosting)
 
 ```bash
 firebase deploy
 ```
 
-Set environment variables in the Firebase console under App Hosting → your backend → Environment variables. Add the same keys from `.env.local`.
+Set env vars in Firebase console → App Hosting → your backend → Environment variables. Same keys as `.env.local`.

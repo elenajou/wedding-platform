@@ -20,6 +20,8 @@ CREATE TABLE weddings (
   feature_schedule          boolean NOT NULL DEFAULT true,
   feature_faq               boolean NOT NULL DEFAULT true,
   feature_seating_card      boolean NOT NULL DEFAULT true,
+  -- Per-section enabled design keys; empty {} means all designs are allowed
+  enabled_designs           jsonb NOT NULL DEFAULT '{}',
   -- Auth
   dashboard_password_hash   text NOT NULL DEFAULT '',
   -- Soft delete / suspend
@@ -53,6 +55,8 @@ CREATE TABLE wedding_details (
   video_source_type   text CHECK (video_source_type IN ('youtube','vimeo','self')),
   video_source_id     text,
   video_poster_url    text,
+  -- per-locale overrides for hero/letter text: { "zh": { "hero_eyebrow": "..." }, "es": { ... } }
+  locale_content      jsonb NOT NULL DEFAULT '{}',
   created_at          timestamptz NOT NULL DEFAULT now(),
   UNIQUE (wedding_id)
 );
@@ -68,6 +72,7 @@ CREATE TABLE section_config (
   font_color      text,
   overlay_opacity numeric NOT NULL DEFAULT 0.32,
   sort_order      integer NOT NULL DEFAULT 0,
+  visible         boolean NOT NULL DEFAULT true,
   created_at      timestamptz NOT NULL DEFAULT now(),
   UNIQUE (wedding_id, section_key)
 );

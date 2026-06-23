@@ -79,26 +79,29 @@ export async function getAllLocaleLetterData(): Promise<Record<string, LocaleLet
 
   const vars = { bride: details.bride_name, groom: details.groom_name }
 
-  const build = (staticDict: Awaited<ReturnType<typeof getDictionary>>, d: WeddingDetails): LocaleLetterData => ({
-    envelopeDict: {
-      eyebrow: staticDict.envelope.eyebrow,
-      names: t(staticDict.envelope.names, vars),
-      dearGuest: staticDict.envelope.dearGuest,
-      dearGuestFallback: staticDict.envelope.dearGuestFallback,
-      letterBody: staticDict.envelope.letterBody,
-      viewInvitation: staticDict.envelope.viewInvitation,
-      needHelp: staticDict.envelope.needHelp,
-      contactCoordinator: staticDict.envelope.contactCoordinator,
-    },
-    letterEyebrow: d.letter_eyebrow ?? null,
-    letterGreeting: d.letter_greeting ?? null,
-    letterBodyText: d.letter_body_text ?? null,
-  })
+  const build = (staticDict: Awaited<ReturnType<typeof getDictionary>>, d: WeddingDetails, localeKey: string): LocaleLetterData => {
+    const lc = (d.locale_content?.[localeKey] ?? {}) as Record<string, string>
+    return {
+      envelopeDict: {
+        eyebrow: staticDict.envelope.eyebrow,
+        names: t(staticDict.envelope.names, vars),
+        dearGuest: staticDict.envelope.dearGuest,
+        dearGuestFallback: staticDict.envelope.dearGuestFallback,
+        letterBody: staticDict.envelope.letterBody,
+        viewInvitation: staticDict.envelope.viewInvitation,
+        needHelp: staticDict.envelope.needHelp,
+        contactCoordinator: staticDict.envelope.contactCoordinator,
+      },
+      letterEyebrow: lc.letter_eyebrow ?? d.letter_eyebrow ?? null,
+      letterGreeting: lc.letter_greeting ?? d.letter_greeting ?? null,
+      letterBodyText: lc.letter_body_text ?? d.letter_body_text ?? null,
+    }
+  }
 
   return {
-    en: build(enDict, details),
-    es: build(esDict, details),
-    zh: build(zhDict, details),
+    en: build(enDict, details, 'en'),
+    es: build(esDict, details, 'es'),
+    zh: build(zhDict, details, 'zh'),
   }
 }
 
@@ -120,6 +123,7 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
   const brideName = details.bride_name
   const groomName = details.groom_name
   const vars = { bride: brideName, groom: groomName }
+  const lc = (details.locale_content?.[locale] ?? {}) as Record<string, string>
 
   const dict = {
     ...staticDict,
@@ -152,10 +156,10 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
     brideName,
     groomName,
     namesFontUrl: details.names_font_url ?? null,
-    heroTagline: details.hero_tagline ?? null,
-    letterEyebrow: details.letter_eyebrow ?? null,
-    letterGreeting: details.letter_greeting ?? null,
-    letterBodyText: details.letter_body_text ?? null,
+    heroTagline: lc.hero_tagline ?? details.hero_tagline ?? null,
+    letterEyebrow: lc.letter_eyebrow ?? details.letter_eyebrow ?? null,
+    letterGreeting: lc.letter_greeting ?? details.letter_greeting ?? null,
+    letterBodyText: lc.letter_body_text ?? details.letter_body_text ?? null,
     sections,
   }
 

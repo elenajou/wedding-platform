@@ -36,7 +36,7 @@ export default function ScheduleTab({ initialItems }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this event?')) return
+    if (!confirm('¿Eliminar este evento?')) return
     const res = await fetch(`/api/dashboard/schedule/${id}`, { method: 'DELETE' })
     if (res.ok) setItems(i => i.filter(x => x.id !== id))
     else setError('Failed')
@@ -44,22 +44,22 @@ export default function ScheduleTab({ initialItems }: Props) {
 
   return (
     <div>
-      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Schedule</p>
+      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Agenda</p>
 
       <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr 1fr 2fr auto', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        {[['Order', 'sort_order', '0'], ['Time', 'time_label', '4:00 PM'], ['ISO time', 'iso_time', '2025-12-01T16:00'], ['Event name', 'event_name', 'Ceremony']].map(([lbl, k, ph]) => (
+        {[['Orden', 'sort_order', '0'], ['Hora', 'time_label', '4:00 PM'], ['ISO hora', 'iso_time', '2025-12-01T16:00'], ['Nombre del evento', 'event_name', 'Ceremonia']].map(([lbl, k, ph]) => (
           <div key={k}>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{lbl}</div>
             <input style={field} placeholder={ph} value={(form as any)[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} required={k !== 'sort_order'} />
           </div>
         ))}
-        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Add</button>
+        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Agregar</button>
       </form>
 
       {error && <p style={{ color: '#c4614a', fontSize: 13, fontStyle: 'italic', marginBottom: 8 }}>{error}</p>}
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr><th style={th}>#</th><th style={th}>Time</th><th style={th}>Event</th><th style={th}>Description</th><th style={th}></th></tr></thead>
+        <thead><tr><th style={th}>#</th><th style={th}>Hora</th><th style={th}>Evento</th><th style={th}>Descripción</th><th style={th}></th></tr></thead>
         <tbody>
           {items.map(item => editing?.id === item.id ? (
             <tr key={item.id}>
@@ -68,8 +68,8 @@ export default function ScheduleTab({ initialItems }: Props) {
               <td style={td}><input style={field} value={editing.event_name} onChange={e => setEditing(x => x && ({ ...x, event_name: e.target.value }))} /></td>
               <td style={td}><input style={field} value={editing.description} onChange={e => setEditing(x => x && ({ ...x, description: e.target.value }))} /></td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Save</button>
-                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancel</button>
+                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Guardar</button>
+                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancelar</button>
               </td>
             </tr>
           ) : (
@@ -79,12 +79,12 @@ export default function ScheduleTab({ initialItems }: Props) {
               <td style={td}>{item.event_name}</td>
               <td style={{ ...td, color: '#4b4331' }}>{item.description ?? '—'}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), time_label: item.time_label, iso_time: item.iso_time, event_name: item.event_name, description: item.description ?? '' })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Edit</button>
-                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Delete</button>
+                <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), time_label: item.time_label, iso_time: item.iso_time, event_name: item.event_name, description: item.description ?? '' })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Editar</button>
+                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Eliminar</button>
               </td>
             </tr>
           ))}
-          {items.length === 0 && <tr><td colSpan={5} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>No events yet.</td></tr>}
+          {items.length === 0 && <tr><td colSpan={5} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>Sin eventos aún.</td></tr>}
         </tbody>
       </table>
     </div>

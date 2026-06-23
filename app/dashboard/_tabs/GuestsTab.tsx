@@ -39,7 +39,7 @@ export default function GuestsTab({ initialItems, groups }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this guest?')) return
+    if (!confirm('¿Eliminar este invitado?')) return
     const res = await fetch(`/api/dashboard/guests/${id}`, { method: 'DELETE' })
     if (res.ok) setItems(i => i.filter(x => x.id !== id))
     else setError('Failed to delete')
@@ -48,7 +48,7 @@ export default function GuestsTab({ initialItems, groups }: Props) {
   function groupSelect(value: string, onChange: (v: string) => void) {
     return (
       <select style={{ ...field, cursor: 'pointer' }} value={value} onChange={e => onChange(e.target.value)}>
-        <option value="">No group</option>
+        <option value="">Sin grupo</option>
         {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
       </select>
     )
@@ -56,27 +56,27 @@ export default function GuestsTab({ initialItems, groups }: Props) {
 
   return (
     <div>
-      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Guests</p>
+      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Invitados</p>
 
       <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr 1.5fr 1fr 1fr auto', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        {[['Name', 'name', 'John Smith'], ['Phone', 'phone', '+1 555 000'], ['Email', 'email', ''], ['Table', 'table_name', 'Table 1'], ['Lang', 'language', 'en']].map(([lbl, k, ph]) => (
+        {[['Nombre', 'name', 'Juan García'], ['Teléfono', 'phone', '+52 55 0000'], ['Email', 'email', ''], ['Mesa', 'table_name', 'Mesa 1'], ['Idioma', 'language', 'es']].map(([lbl, k, ph]) => (
           <div key={k}>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{lbl}</div>
             <input style={field} placeholder={ph} value={(form as any)[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} required={k === 'name'} />
           </div>
         ))}
         <div>
-          <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>Group</div>
+          <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>Grupo</div>
           {groupSelect(form.group_id, v => setForm(f => ({ ...f, group_id: v })))}
         </div>
-        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Add</button>
+        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Agregar</button>
       </form>
 
       {error && <p style={{ color: '#c4614a', fontSize: 13, fontStyle: 'italic', marginBottom: 8 }}>{error}</p>}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
-          <thead><tr><th style={th}>Name</th><th style={th}>Phone</th><th style={th}>Table</th><th style={th}>Group</th><th style={th}>Lang</th><th style={th}></th></tr></thead>
+          <thead><tr><th style={th}>Nombre</th><th style={th}>Teléfono</th><th style={th}>Mesa</th><th style={th}>Grupo</th><th style={th}>Idioma</th><th style={th}></th></tr></thead>
           <tbody>
             {items.map(item => editing?.id === item.id ? (
               <tr key={item.id}>
@@ -86,8 +86,8 @@ export default function GuestsTab({ initialItems, groups }: Props) {
                 <td style={td}>{groupSelect(editing.group_id, v => setEditing(x => x && ({ ...x, group_id: v })))}</td>
                 <td style={td}><input style={{ ...field, width: 60 }} value={editing.language} onChange={e => setEditing(x => x && ({ ...x, language: e.target.value }))} /></td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                  <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Save</button>
-                  <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancel</button>
+                  <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Guardar</button>
+                  <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancelar</button>
                 </td>
               </tr>
             ) : (
@@ -98,12 +98,12 @@ export default function GuestsTab({ initialItems, groups }: Props) {
                 <td style={td}>{item.group_name ?? '—'}</td>
                 <td style={td}>{item.language ?? '—'}</td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                  <button onClick={() => setEditing({ id: item.id, name: item.name, phone: item.phone ?? '', email: item.email ?? '', group_id: item.group_id ?? '', table_name: item.table_name ?? '', language: item.language ?? '' })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Edit</button>
-                  <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Delete</button>
+                  <button onClick={() => setEditing({ id: item.id, name: item.name, phone: item.phone ?? '', email: item.email ?? '', group_id: item.group_id ?? '', table_name: item.table_name ?? '', language: item.language ?? '' })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Editar</button>
+                  <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Eliminar</button>
                 </td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan={6} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>No guests yet.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={6} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>Sin invitados aún.</td></tr>}
           </tbody>
         </table>
       </div>

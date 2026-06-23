@@ -25,6 +25,7 @@ export async function PUT(req: NextRequest) {
   try {
     // Strip non-editable fields — all other keys are passed through
     const { id: _id, wedding_id: _wid, created_at: _ca, ...b } = await req.json()
+    const localeContentJson = JSON.stringify(b.locale_content ?? {})
 
     const rows = await sql`
       UPDATE wedding_details SET
@@ -48,7 +49,8 @@ export async function PUT(req: NextRequest) {
         letter_body_text   = COALESCE(${b.letter_body_text    ?? null}, letter_body_text),
         video_source_type  = COALESCE(${b.video_source_type   ?? null}, video_source_type),
         video_source_id    = COALESCE(${b.video_source_id     ?? null}, video_source_id),
-        video_poster_url   = COALESCE(${b.video_poster_url    ?? null}, video_poster_url)
+        video_poster_url   = COALESCE(${b.video_poster_url    ?? null}, video_poster_url),
+        locale_content     = ${localeContentJson}::jsonb
       WHERE wedding_id = ${session.weddingId}
       RETURNING *
     `

@@ -36,7 +36,7 @@ export default function PhotosTab({ initialItems }: Props) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this photo?')) return
+    if (!confirm('¿Eliminar esta foto?')) return
     const res = await fetch(`/api/dashboard/photos/${id}`, { method: 'DELETE' })
     if (res.ok) setItems(i => i.filter(x => x.id !== id))
     else setError('Failed')
@@ -44,22 +44,22 @@ export default function PhotosTab({ initialItems }: Props) {
 
   return (
     <div>
-      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Gallery Photos</p>
+      <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>Galería de Fotos</p>
 
       <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '0.4fr 3fr 2fr 2fr auto', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        {[['#', 'sort_order', '0'], ['Image URL', 'src', 'https://...'], ['Alt text', 'alt', 'Photo description'], ['Caption', 'caption', 'Optional caption']].map(([lbl, k, ph]) => (
+        {[['#', 'sort_order', '0'], ['URL de imagen', 'src', 'https://...'], ['Texto alt', 'alt', 'Descripción de foto'], ['Pie de foto', 'caption', 'Opcional']].map(([lbl, k, ph]) => (
           <div key={k}>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{lbl}</div>
             <input style={field} placeholder={ph} value={(form as any)[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} required={k === 'src'} />
           </div>
         ))}
-        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Add</button>
+        <button type="submit" style={{ ...btn(), alignSelf: 'flex-end' }}>Agregar</button>
       </form>
 
       {error && <p style={{ color: '#c4614a', fontSize: 13, fontStyle: 'italic', marginBottom: 8 }}>{error}</p>}
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr><th style={th}>#</th><th style={th}>Preview</th><th style={th}>URL</th><th style={th}>Alt</th><th style={th}>Caption</th><th style={th}></th></tr></thead>
+        <thead><tr><th style={th}>#</th><th style={th}>Vista previa</th><th style={th}>URL</th><th style={th}>Alt</th><th style={th}>Pie de foto</th><th style={th}></th></tr></thead>
         <tbody>
           {items.map(item => editing?.id === item.id ? (
             <tr key={item.id}>
@@ -68,8 +68,8 @@ export default function PhotosTab({ initialItems }: Props) {
               <td style={td}><input style={field} value={editing.alt} onChange={e => setEditing(x => x && ({ ...x, alt: e.target.value }))} /></td>
               <td style={td}><input style={field} value={editing.caption} onChange={e => setEditing(x => x && ({ ...x, caption: e.target.value }))} /></td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Save</button>
-                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancel</button>
+                <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>Guardar</button>
+                <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>Cancelar</button>
               </td>
             </tr>
           ) : (
@@ -82,12 +82,12 @@ export default function PhotosTab({ initialItems }: Props) {
               <td style={td}>{item.alt}</td>
               <td style={{ ...td, color: '#4b4331', fontStyle: 'italic' }}>{item.caption ?? '—'}</td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), src: item.src, alt: item.alt, caption: item.caption ?? '' })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Edit</button>
-                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Delete</button>
+                <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), src: item.src, alt: item.alt, caption: item.caption ?? '' })} style={{ ...btn('#e8e0d4'), marginRight: 6 }}>Editar</button>
+                <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>Eliminar</button>
               </td>
             </tr>
           ))}
-          {items.length === 0 && <tr><td colSpan={6} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>No photos yet.</td></tr>}
+          {items.length === 0 && <tr><td colSpan={6} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>Sin fotos aún.</td></tr>}
         </tbody>
       </table>
     </div>

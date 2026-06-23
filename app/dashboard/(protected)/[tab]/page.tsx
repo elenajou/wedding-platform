@@ -13,10 +13,11 @@ import FaqTab from '@/app/dashboard/_tabs/FaqTab'
 import PhotosTab from '@/app/dashboard/_tabs/PhotosTab'
 import ThemeTab from '@/app/dashboard/_tabs/ThemeTab'
 import SectionsTab from '@/app/dashboard/_tabs/SectionsTab'
+import HelpTab from '@/app/dashboard/_tabs/HelpTab'
 
 type Props = { params: Promise<{ tab: string }> }
 
-const BASE_TABS = ['wedding', 'tables', 'groups', 'guests', 'sections', 'theme']
+const BASE_TABS = ['wedding', 'tables', 'groups', 'guests', 'sections', 'theme', 'help']
 
 const TAB_LABELS: Record<string, string> = {
   wedding: 'Boda',
@@ -30,6 +31,7 @@ const TAB_LABELS: Record<string, string> = {
   faq: 'FAQ',
   photos: 'Fotos',
   video: 'Video',
+  help: 'Ayuda',
 }
 
 const nav: React.CSSProperties = {
@@ -106,6 +108,8 @@ export default async function DashboardTabPage({ params }: Props) {
       ...(config.features.faq ? ['faq'] : []),
     ]
     content = <SectionsTab initialSections={rows as any[]} activeSectionKeys={activeSectionKeys} />
+  } else if (tab === 'help') {
+    content = <HelpTab />
   } else if (tab === 'theme') {
     const [sectionRows, detailRows] = await Promise.all([
       sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`,

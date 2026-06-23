@@ -36,7 +36,45 @@ type Props = {
   weddingDetails?: Record<string, unknown> | null
 }
 
-// ── Preview dict (static English copy + sample data for empty-array fields) ──
+// ── Preview dimensions (iPhone 14 Pro Max logical pixels) ────────────────────
+
+const PHONE_W = 450
+const PHONE_H = 1000
+const PREVIEW_W = 250
+const SCALE = PREVIEW_W / PHONE_W
+const PREVIEW_H = Math.round(PHONE_H * SCALE)
+
+// ── Preview FadeIn (no animations — shows immediately for the live panel) ────
+
+function PreviewFadeIn({ section, children }: { section: SectionRow; children: React.ReactNode }) {
+  const style: React.CSSProperties & Record<string, string> = {}
+  if (section.background_url) {
+    style.backgroundImage = `url(${section.background_url})`
+    style.backgroundSize = 'cover'
+    style.backgroundPosition = 'center'
+    style.position = 'relative'
+  }
+  if (section.background_color) style.backgroundColor = section.background_color
+  if (section.font_color) style['--section-color'] = section.font_color
+
+  return (
+    <div style={style}>
+      {section.background_url && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          background: section.overlay_opacity >= 0
+            ? `rgba(0,0,0,${section.overlay_opacity})`
+            : `rgba(255,255,255,${Math.abs(section.overlay_opacity)})`,
+        }} />
+      )}
+      <div style={section.background_url ? { position: 'relative', zIndex: 1 } : undefined}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ── Preview dict (static English copy + sample data) ─────────────────────────
 
 const PREVIEW_DICT = {
   envelope: {
@@ -180,7 +218,7 @@ const SECTION_LABELS: Record<string, string> = {
 
 const colorSchemes = getAllColorSchemes()
 
-// ── Live preview renderer ────────────────────────────────────────────────────
+// ── Live preview renderer ─────────────────────────────────────────────────────
 
 function renderPreviewSection(key: string, section: SectionRow, wd: Record<string, unknown> | null | undefined) {
   const design = section.design
@@ -335,34 +373,29 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
         setSaved(true)
         setTimeout(() => setSaved(false), 2500)
       } else {
-        const d = await res.json(); setError(d.error ?? 'Failed to save')
+        const d = await res.json(); setError(d.error ?? 'Error al guardar')
       }
-    } catch { setError('Network error') } finally { setSaving(false) }
+    } catch { setError('Error de red') } finally { setSaving(false) }
   }
 
   const currentSection = sections.find(s => s.section_key === openSection)
-
-  // Scale: inner 860px → preview 368px
-  const INNER_W = 860
-  const PREVIEW_W = 368
-  const SCALE = PREVIEW_W / INNER_W
 
   return (
     <div>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19' }}>
-          Theme &amp; Templates
+          Tema y Plantillas
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          {saved && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>Saved</span>}
+          {saved && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>Guardado</span>}
           {error && <span style={{ fontSize: 12, color: '#c4614a', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{error}</span>}
           <button
             onClick={handleSave}
             disabled={saving}
             style={{ padding: '7px 18px', background: '#b08d57', color: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: saving ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: saving ? 0.6 : 1 }}
           >
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Guardando…' : 'Guardar'}
           </button>
         </div>
       </div>
@@ -373,7 +406,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
         {/* ── Left: controls ── */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#7a6e5f', fontStyle: 'italic', marginBottom: '1.5rem' }}>
-            Choose a template and colour scheme for each section. Customise backgrounds, overlays, and font colours.
+            Elige plantilla y paleta para cada sección. Personaliza fondos, superposición y color de texto.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -408,7 +441,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                         <span style={{ width: 9, height: 9, borderRadius: '50%', background: scheme.colorPrimary, display: 'inline-block', border: '0.5px solid #e0d8c8' }} />
                         <span style={{ fontSize: 10, color: '#7a6e5f', fontFamily: "'EB Garamond', serif" }}>{section.color_scheme}</span>
                       </span>
-                      {hasCustomBg && <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>bg override</span>}
+                      {hasCustomBg && <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>fondo personalizado</span>}
                     </div>
                     <span style={{ fontSize: 13, color: '#7a6e5f', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block', flexShrink: 0, marginLeft: 8 }}>▾</span>
                   </button>
@@ -419,7 +452,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                       {/* Template preview grid */}
                       <div style={{ marginTop: 16, marginBottom: 16 }}>
-                        <p style={{ ...th, marginBottom: 10 }}>Template</p>
+                        <p style={{ ...th, marginBottom: 10 }}>Plantilla</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           {designs.map(d => (
                             <button
@@ -456,7 +489,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                       {/* Colour scheme */}
                       <div style={{ marginBottom: 16 }}>
-                        <p style={{ ...th, marginBottom: 8 }}>Colour Scheme</p>
+                        <p style={{ ...th, marginBottom: 8 }}>Paleta de colores</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {colorSchemes.map(cs => (
                             <button
@@ -481,12 +514,12 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                       </div>
 
                       {/* Background */}
-                      <div style={{ marginBottom: 0 }}>
-                        <p style={{ ...th, marginBottom: 10 }}>Background</p>
+                      <div>
+                        <p style={{ ...th, marginBottom: 10 }}>Fondo</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
                           <div>
-                            <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Image URL</label>
+                            <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>URL de imagen de fondo</label>
                             <input
                               type="url"
                               placeholder="https://images.unsplash.com/…"
@@ -498,7 +531,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                             <div>
-                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Background Color</label>
+                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Color de fondo</label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                                 <input
                                   type="color"
@@ -507,16 +540,16 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                                   style={{ width: 30, height: 24, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none' }}
                                 />
                                 <span style={{ fontSize: 12, fontFamily: "'EB Garamond', serif", color: '#201d19' }}>
-                                  {section.background_color ?? 'None'}
+                                  {section.background_color ?? 'Ninguno'}
                                 </span>
                                 {section.background_color && (
-                                  <button onClick={() => update(key, { background_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>Clear</button>
+                                  <button onClick={() => update(key, { background_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>Limpiar</button>
                                 )}
                               </div>
                             </div>
 
                             <div>
-                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Font Color</label>
+                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Color de texto</label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                                 <input
                                   type="color"
@@ -525,10 +558,10 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                                   style={{ width: 30, height: 24, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none' }}
                                 />
                                 <span style={{ fontSize: 12, fontFamily: "'EB Garamond', serif", color: '#201d19' }}>
-                                  {section.font_color ?? 'Default'}
+                                  {section.font_color ?? 'Por defecto'}
                                 </span>
                                 {section.font_color && (
-                                  <button onClick={() => update(key, { font_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>Clear</button>
+                                  <button onClick={() => update(key, { font_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>Limpiar</button>
                                 )}
                               </div>
                             </div>
@@ -537,7 +570,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                           {hasCustomBg && (
                             <div>
                               <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 5 }}>
-                                Overlay Opacity — {Math.round(section.overlay_opacity * 100)}%
+                                Opacidad de superposición — {Math.round(section.overlay_opacity * 100)}%
                               </label>
                               <input
                                 type="range"
@@ -547,8 +580,8 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                                 style={{ width: '100%', accentColor: '#b08d57' }}
                               />
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                                <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>None</span>
-                                <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>Full</span>
+                                <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>Ninguna</span>
+                                <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>Completa</span>
                               </div>
                             </div>
                           )}
@@ -564,16 +597,12 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
           </div>
         </div>
 
-        {/* ── Right: live preview ── */}
-        <div style={{ width: PREVIEW_W, flexShrink: 0, position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
-          {/* Panel header */}
-          <div style={{
-            padding: '10px 14px', background: '#fff',
-            border: '0.5px solid #e0d8c8', borderBottom: 'none',
-            borderRadius: '4px 4px 0 0',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <span style={{ ...th, fontSize: 9 }}>Live Preview</span>
+        {/* ── Right: live preview (iPhone 14 Pro Max dimensions) ── */}
+        <div style={{ width: PREVIEW_W + 20, flexShrink: 0, position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
+
+          {/* Panel label */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ ...th, fontSize: 9 }}>Vista previa — iPhone 14 Pro Max</span>
             {openSection && (
               <span style={{ fontSize: 12, color: '#b08d57', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>
                 {SECTION_LABELS[openSection] ?? openSection}
@@ -581,40 +610,87 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
             )}
           </div>
 
-          {/* Scaled component */}
+          {/* Phone frame — screen-edge design (Dynamic Island inside) */}
           <div style={{
-            width: PREVIEW_W,
-            height: 520,
-            overflow: 'hidden',
-            border: '0.5px solid #e0d8c8',
-            borderRadius: '0 0 4px 4px',
-            background: currentSection ? getColorScheme(currentSection.color_scheme).colorBackground : '#faf7f2',
-            position: 'relative',
+            width: PREVIEW_W + 14,
+            background: '#1c1c1e',
+            borderRadius: 36,
+            padding: '7px',
+            boxShadow: '0 0 0 1px #3a3a3c, inset 0 0 0 1px #2c2c2e, 0 24px 64px rgba(0,0,0,0.5)',
           }}>
-            {currentSection ? (
+            {/* Screen — Dynamic Island + content + home bar all live inside */}
+            <div style={{
+              width: PREVIEW_W,
+              height: PREVIEW_H,
+              overflow: 'hidden',
+              borderRadius: 29,
+              background: currentSection
+                ? (currentSection.background_color ?? getColorScheme(currentSection.color_scheme).colorBackground)
+                : '#faf7f2',
+              position: 'relative',
+            }}>
+              {/* Content */}
+              {currentSection ? (
+                <div style={{
+                  width: PHONE_W,
+                  position: 'absolute',
+                  top: 0,
+                  left: '50%',
+                  transform: `translateX(-50%) scale(${SCALE})`,
+                  transformOrigin: 'top center',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  paddingTop: Math.round(44 / SCALE),
+                }}>
+                  <SectionTheme sectionCfg={{ colorScheme: currentSection.color_scheme, fontColor: currentSection.font_color ?? '' }}>
+                    <PreviewFadeIn section={currentSection}>
+                      {renderPreviewSection(openSection!, currentSection, weddingDetails)}
+                    </PreviewFadeIn>
+                  </SectionTheme>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", fontSize: 14, textAlign: 'center', padding: '0 20px' }}>
+                  Abre una sección para ver la vista previa
+                </div>
+              )}
+
+              {/* Dynamic Island — pill cutout overlaid on screen */}
               <div style={{
-                width: INNER_W,
-                position: 'absolute',
-                top: 0, left: 0,
-                transform: `scale(${SCALE})`,
-                transformOrigin: 'top left',
-                pointerEvents: 'none',
-                userSelect: 'none',
+                position: 'absolute', top: 10, left: '50%',
+                transform: 'translateX(-50%)',
+                width: Math.round(PREVIEW_W * 0.34),
+                height: 20,
+                background: '#0a0a0a',
+                borderRadius: 10,
+                zIndex: 20,
+                boxShadow: '0 0 0 1px #1c1c1e',
               }}>
-                <SectionTheme sectionCfg={{ colorScheme: currentSection.color_scheme, fontColor: currentSection.font_color ?? '' }}>
-                  {renderPreviewSection(openSection!, currentSection, weddingDetails)}
-                </SectionTheme>
+                {/* Front camera dot */}
+                <div style={{
+                  position: 'absolute', right: 10, top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 7, height: 7,
+                  borderRadius: '50%',
+                  background: '#1a2a2a',
+                  boxShadow: 'inset 0 0 0 1.5px #0d1a1a',
+                }} />
               </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", fontSize: 14 }}>
-                Open a section to preview
-              </div>
-            )}
+
+              {/* Home indicator — inside screen at bottom */}
+              <div style={{
+                position: 'absolute', bottom: 6, left: '50%',
+                transform: 'translateX(-50%)',
+                width: Math.round(PREVIEW_W * 0.36),
+                height: 4,
+                background: 'rgba(0,0,0,0.25)',
+                borderRadius: 2,
+                zIndex: 20,
+              }} />
+            </div>
           </div>
 
-          {/* Hint */}
-          <p style={{ marginTop: 6, fontSize: 11, color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", textAlign: 'center' }}>
-            Preview updates as you change settings above
+          <p style={{ marginTop: 8, fontSize: 10, color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", textAlign: 'center' }}>
+            La vista previa se actualiza al cambiar los ajustes
           </p>
         </div>
 

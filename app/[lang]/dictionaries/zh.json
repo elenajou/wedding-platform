@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "{bride} 与 {groom} — 婚礼邀请",
+    "description": "诚挚地邀请您"
+  },
+  "envelope": {
+    "eyebrow": "诚挚地邀请您",
+    "names": "{bride} & {groom}",
+    "dearGuest": "亲爱的{name}，",
+    "dearGuestFallback": "亲爱的宾客，",
+    "letterBody": "您的邀请函在里面。",
+    "viewInvitation": "查看您的邀请函",
+    "needHelp": "需要帮助？",
+    "contactCoordinator": "联系我们的协调员",
+    "fromLine": "来自：{bride} 与 {groom}",
+    "toPhone": "收件人（电话号码）",
+    "toCode": "收件人（邀请码）",
+    "phonePlaceholder": "+86 138 0000 0000",
+    "codePlaceholder": "例如 JOHN24",
+    "errorEmpty": "请输入您的{mode}",
+    "modePhone": "电话号码",
+    "modeCode": "邀请码",
+    "errorNotFound": "我们找不到您的邀请。请检查您的信息。",
+    "errorGeneric": "出了点问题。请再试一次。",
+    "useInstead": "改用：",
+    "inviteCode": "邀请码",
+    "phoneNumber": "电话号码",
+    "hintSending": "正在发送您的信息...",
+    "hintDefault": "输入您的信息，然后点击封印",
+    "postmarkTop": "婚礼",
+    "postmarkDate": ""
+  },
+  "hero": {
+    "eyebrow": "与家人一起",
+    "tagline": "恭请您莅临见证",
+    "weddingDate": "",
+    "dearGreeting": "亲爱的{name}，<br/>我们欢喜地邀请您来庆祝",
+    "fallbackGreeting": "我们欢喜地邀请您来庆祝"
+  },
+  "countdown": {
+    "label": "倒计时",
+    "pastMessage": "今天我们庆祝",
+    "days": "天",
+    "hours": "时",
+    "minutes": "分",
+    "seconds": "秒",
+    "message": ""
+  },
+  "seating": {
+    "sectionLabel": "您的座位",
+    "tableLabel": "您的座位在",
+    "tableTBC": "待确认",
+    "table": "桌子",
+    "membersLabel": "您的同伴",
+    "youBadge": "您",
+    "seatsTextSingular": "此邀请函共邀请<br/><strong>{count}</strong> 位宾客",
+    "seatsTextPlural": "此邀请函共邀请<br/><strong>{count}</strong> 位宾客",
+    "seatSingular": "个座位",
+    "seatPlural": "个座位",
+    "guestSingular": "位宾客",
+    "guestPlural": "位宾客"
+  },
+  "rsvp": {
+    "sectionLabel": "敬请回复",
+    "deadline": "请在{deadline}前回复",
+    "nameLabel": "您的全名",
+    "namePlaceholder": "您的姓名",
+    "attendanceLabel": "出席",
+    "accepts": "我会去",
+    "declines": "不能去",
+    "guestCountLabel": "出席宾客人数（最多 {max} 人）",
+    "messageLabel": "给新人的留言",
+    "messagePlaceholder": "分享您的祝福...",
+    "errorName": "请输入您的姓名。",
+    "errorAttendance": "请选择您是否出席。",
+    "errorGeneric": "出了点问题。请再试一次。",
+    "sending": "发送中...",
+    "sendReply": "发送回复",
+    "successYes": "谢谢您，{name} — 我们迫不及待与您一起庆祝。",
+    "successNo": "我们会想念您的，{name}。感谢您的告知。",
+    "successSub": "您的回复已收到",
+    "rsvpDeadline": ""
+  },
+  "schedule": {
+    "sectionLabel": "当日日程",
+    "happeningNow": "正在进行",
+    "events": []
+  },
+  "video": {
+    "title": "我们的故事",
+    "playLabel": "播放视频",
+    "dataNotePlaying": "视频正在播放。",
+    "dataNoteIdle": "视频仅在您点击播放时加载 — 节省您的流量。"
+  },
+  "gallery": {
+    "title": "大日子之前",
+    "subtitle": "我们一路走来的一些时刻",
+    "close": "关闭",
+    "previous": "上一张",
+    "next": "下一张",
+    "countOf": "{current} / {total}",
+    "photos": []
+  },
+  "faq": {
+    "sectionLabel": "常见问题",
+    "contactLabel": "还有疑问？",
+    "contactText": "请联系{coordinator}，而不是在婚礼前直接联系新人。",
+    "items": [],
+    "close": "关闭邀请函"
+  },
+  "languageSwitcher": {
+    "label": "语言"
+  }
+}

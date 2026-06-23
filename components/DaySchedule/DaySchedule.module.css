@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:ital,wght@0,400;1,400&display=swap');
+
+.section { padding: 3rem 2rem; border-bottom: 0.5px solid var(--color-border, #e0d8c8); font-family: 'EB Garamond', serif; }
+
+.sectionLabel {
+  font-size: 18px; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--section-color, var(--color-text-muted, #4b4331)); margin-bottom: 2rem;
+}
+
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before { content: ''; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 1px; background: var(--color-border, #ddd5c4); }
+
+.item { position: relative; margin-bottom: 2rem; }
+.item:last-child { margin-bottom: 0; }
+
+.dot { position: absolute; left: -25px; top: 5px; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--color-border, #c4b89a); background: var(--color-background, #faf7f2); box-sizing: border-box; }
+.dot.active { background: var(--color-text, #2e2a24); border-color: var(--color-text, #201d19); }
+
+.time { font-size: 15px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--color-text-muted, #4b4331); margin-bottom: 3px; }
+.eventName { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-style: italic; font-weight: 300; color: var(--color-text, #201d19); line-height: 1.2; margin-bottom: 3px; }
+.eventDesc { font-size: 15px; color: var(--color-text-muted, #554d42); line-height: 1.5; }
+.nowBadge { display: inline-block; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-text-muted, #4b4331); border: 0.5px solid var(--color-border, #c4b89a); padding: 2px 7px; border-radius: 1px; margin-top: 4px; }

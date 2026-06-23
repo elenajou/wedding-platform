@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* Default theme tokens — overridden per-section via SectionTheme */
+:root {
+  --color-primary: #b08d57;
+  --color-background: #faf7f2;
+  --color-surface: #f4efe5;
+  --color-text: #2e2a24;
+  --color-text-muted: #9a9080;
+  --color-border: #d4c5a9;
+  --color-accent: #eccf7a;
+  --btn-bg: #2e2a24;
+  --btn-text: #faf7f2;
+  --seal-color: #6b6046;
+}
+
+html {
+  overflow-y: scroll;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Background fade-in on mount ── */
+@keyframes bgFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-bg {
+  animation: bgFadeIn 0.8s ease forwards;
+}
+
+/* ── Content fade-in on scroll ── */
+.fade-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.fade-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (min-width: 800px) {
+  .fade-section {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

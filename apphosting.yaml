@@ -1,0 +1,15 @@
+runConfig:
+  minInstances: 0
+env:
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    secret: NEXT_PUBLIC_SUPABASE_URL
+  - variable: NEXT_PUBLIC_SUPABASE_SECRET
+    secret: NEXT_PUBLIC_SUPABASE_SECRET
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: SUPABASE_SERVICE_ROLE_KEY
+  - variable: SUPER_ADMIN_PASSWORD
+    secret: SUPER_ADMIN_PASSWORD
+  - variable: DASHBOARD_JWT_SECRET
+    secret: DASHBOARD_JWT_SECRET
+  - variable: PLATFORM_DOMAIN
+    secret: PLATFORM_DOMAIN

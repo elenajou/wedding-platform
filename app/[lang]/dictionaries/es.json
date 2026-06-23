@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "{bride} y {groom} — Invitación de Boda",
+    "description": "Están cordialmente invitados"
+  },
+  "envelope": {
+    "eyebrow": "Están cordialmente invitados",
+    "names": "{bride} & {groom}",
+    "dearGuest": "Querido/a {name},",
+    "dearGuestFallback": "Querido/a invitado/a,",
+    "letterBody": "tu invitación te espera adentro.",
+    "viewInvitation": "Ver tu invitación",
+    "needHelp": "¿Necesitas ayuda?",
+    "contactCoordinator": "Contacta a nuestro coordinador",
+    "fromLine": "De: {bride} y {groom}",
+    "toPhone": "Para (número de teléfono)",
+    "toCode": "Para (código de invitación)",
+    "phonePlaceholder": "+1 416 555 0123",
+    "codePlaceholder": "ej. JUAN24",
+    "errorEmpty": "Por favor ingresa tu {mode}",
+    "modePhone": "número de teléfono",
+    "modeCode": "código de invitación",
+    "errorNotFound": "No pudimos encontrar tu invitación. Por favor verifica tus datos.",
+    "errorGeneric": "Algo salió mal. Por favor intenta de nuevo.",
+    "useInstead": "Usar en su lugar:",
+    "inviteCode": "código de invitación",
+    "phoneNumber": "número de teléfono",
+    "hintSending": "Enviando tus datos...",
+    "hintDefault": "Ingresa tus datos, luego toca el sello",
+    "postmarkTop": "Boda",
+    "postmarkDate": ""
+  },
+  "hero": {
+    "eyebrow": "Junto con sus familias",
+    "tagline": "solicitan el honor de su presencia",
+    "weddingDate": "En nuestro día especial",
+    "dearGreeting": "Querido/a {name},<br/>con alegría te invitamos a celebrar nuestra boda",
+    "fallbackGreeting": "Con alegría te invitamos a celebrar nuestra boda"
+  },
+  "countdown": {
+    "label": "Cuenta regresiva",
+    "pastMessage": "Hoy celebramos",
+    "days": "Días",
+    "hours": "Horas",
+    "minutes": "Minutos",
+    "seconds": "Segundos",
+    "message": ""
+  },
+  "seating": {
+    "sectionLabel": "Tu asiento",
+    "tableLabel": "Estás sentado/a en",
+    "tableTBC": "Por confirmar",
+    "table": "Mesa",
+    "membersLabel": "En tu grupo",
+    "youBadge": "Tú",
+    "seatsTextSingular": "Esta invitación es para<br/><strong>{count}</strong> invitado en total",
+    "seatsTextPlural": "Esta invitación es para<br/><strong>{count}</strong> invitados en total",
+    "seatSingular": "asiento",
+    "seatPlural": "asientos",
+    "guestSingular": "invitado",
+    "guestPlural": "invitados"
+  },
+  "rsvp": {
+    "sectionLabel": "Confirmar asistencia",
+    "deadline": "Antes del {deadline}",
+    "nameLabel": "Tu nombre completo",
+    "namePlaceholder": "Tu nombre",
+    "attendanceLabel": "Asistencia",
+    "accepts": "Yo sí voy",
+    "declines": "No asistiré",
+    "guestCountLabel": "Número de invitados que asistirán (máx {max})",
+    "messageLabel": "Mensaje para la pareja",
+    "messagePlaceholder": "Comparte tus deseos...",
+    "errorName": "Por favor ingresa tu nombre.",
+    "errorAttendance": "Por favor indica si asistirás.",
+    "errorGeneric": "Algo salió mal. Por favor intenta de nuevo.",
+    "sending": "Enviando...",
+    "sendReply": "Enviar respuesta",
+    "successYes": "Gracias, {name} — no podemos esperar para celebrar contigo.",
+    "successNo": "Te extrañaremos, {name}. Gracias por avisarnos.",
+    "successSub": "Tu confirmación ha sido recibida",
+    "rsvpDeadline": ""
+  },
+  "schedule": {
+    "sectionLabel": "Programa del día",
+    "happeningNow": "Ahora mismo",
+    "events": []
+  },
+  "video": {
+    "title": "Nuestra historia",
+    "playLabel": "Reproducir video",
+    "dataNotePlaying": "El video se está reproduciendo.",
+    "dataNoteIdle": "El video se carga solo cuando presionas reproducir — para ahorrar tus datos."
+  },
+  "gallery": {
+    "title": "Antes del gran día",
+    "subtitle": "Algunos momentos de nuestro camino juntos",
+    "close": "Cerrar",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "countOf": "{current} de {total}",
+    "photos": []
+  },
+  "faq": {
+    "sectionLabel": "Preguntas frecuentes",
+    "contactLabel": "¿Aún tienes preguntas?",
+    "contactText": "Por favor comunícate con {coordinator} en lugar de contactar a la pareja directamente antes del día.",
+    "items": [],
+    "close": "Cerrar invitación"
+  },
+  "languageSwitcher": {
+    "label": "Idioma"
+  }
+}

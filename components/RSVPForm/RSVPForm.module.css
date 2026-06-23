@@ -1,0 +1,285 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:ital,wght@0,400;1,400&display=swap');
+
+.section {
+  padding: 3rem 2rem;
+  border-bottom: 0.5px solid var(--color-border, #e0d8c8);
+  font-family: 'EB Garamond', serif;
+  overflow-x: hidden;
+}
+
+.sectionLabel {
+  font-size: 18px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--section-color, var(--color-text-muted, #4b4331));
+  margin-bottom: 0.4rem;
+}
+
+.deadline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--color-text-muted, #554d42);
+  margin-bottom: 2rem;
+}
+
+.seatingCard {
+  border: 0.5px solid var(--color-border, #ddd5c4);
+  border-radius: 2px;
+  padding: 16px 18px;
+  margin-bottom: 2rem;
+  background: var(--color-surface, #f4efe5);
+}
+
+.seatingTitle {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  margin-bottom: 10px;
+}
+
+.seatingGroup {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 21px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+  margin-bottom: 4px;
+}
+
+.seatingMeta {
+  font-size: 14px;
+  color: var(--color-text-muted, #554d42);
+  margin-bottom: 8px;
+}
+
+.seatingNote {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--color-text-muted, #4b4331);
+  border-top: 0.5px solid var(--color-border, #ddd5c4);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.memberList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+}
+
+.memberItem {
+  font-size: 15px;
+  color: var(--color-text, #3f3832);
+  padding: 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memberItem::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-primary, #b8a878);
+  flex-shrink: 0;
+}
+
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  margin-bottom: 5px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 0.5px solid var(--color-border, #c4b89a);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-bottom-color: var(--color-text, #201d19);
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-text-muted, #89816c);
+  font-style: italic;
+}
+
+.select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23a89870'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 20px;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding: 9px 0;
+}
+
+.attendRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.attendBtn {
+  padding: 11px 0;
+  border: 0.5px solid var(--color-border, #c4b89a);
+  border-radius: 1px;
+  background: transparent;
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.attendBtn.selected {
+  background: var(--button-background, #2e2a24);
+  color: var(--button-text, #f4efe5);
+  border-color: var(--color-text, #201d19);
+}
+
+.partyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.partyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--color-border, #ede8dc);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+}
+
+.partyItem:last-child {
+  border-bottom: none;
+}
+
+.partyName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.partyBtns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.partyBtn {
+  padding: 5px 14px;
+  border: 0.5px solid var(--color-border, #c4b89a);
+  border-radius: 1px;
+  background: transparent;
+  font-family: 'EB Garamond', serif;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.partyBtn.partyYes {
+  background: var(--button-background, #2e2a24);
+  color: var(--button-text, #f4efe5);
+  border-color: var(--color-text, #201d19);
+}
+
+.partyBtn.partyNo {
+  background: #8c7b60;
+  color: #f4efe5;
+  border-color: #7a6a50;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 13px;
+  background: var(--button-background, #2e2a24);
+  color: var(--button-text, #f4efe5);
+  border: none;
+  font-family: 'EB Garamond', serif;
+  font-size: 12px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 1px;
+  margin-top: 0.5rem;
+  transition: background 0.2s, opacity 0.2s;
+}
+.submitBtn:hover:not(:disabled) { opacity: 0.85; }
+.submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.error {
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: #702d22;
+  margin-bottom: 10px;
+}
+
+.success {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.successTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 25px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.successSub {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+}

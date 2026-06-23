@@ -1,0 +1,129 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:ital,wght@0,400;1,400&display=swap');
+
+.section {
+  padding: 3rem 2rem;
+  border-bottom: 0.5px solid var(--color-border, #e0d8c8);
+  font-family: 'EB Garamond', serif;
+}
+
+.sectionLabel {
+  font-size: 18px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--section-color, var(--color-text-muted, #4b4331));
+  margin-bottom: 1.75rem;
+}
+
+.item {
+  border-bottom: 0.5px solid var(--color-border, #e0d8c8);
+}
+
+.item:first-of-type {
+  border-top: 0.5px solid var(--color-border, #e0d8c8);
+}
+
+.trigger {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 18px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.question {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  position: relative;
+  margin-top: 3px;
+}
+
+.icon::before,
+.icon::after {
+  content: '';
+  position: absolute;
+  background: var(--color-text-muted, #6b6046);
+  border-radius: 1px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.icon::before {
+  width: 16px;
+  height: 0.5px;
+  top: 7.5px;
+  left: 0;
+}
+
+.icon::after {
+  width: 0.5px;
+  height: 16px;
+  top: 0;
+  left: 7.5px;
+}
+
+.trigger[aria-expanded='true'] .icon::after {
+  transform: rotate(90deg);
+  opacity: 0;
+}
+
+.panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel.open {
+  max-height: 400px;
+}
+
+.answer {
+  font-size: 17px;
+  color: var(--color-text-muted, #554d42);
+  line-height: 1.7;
+  padding-bottom: 18px;
+}
+
+.contact {
+  margin-top: 2rem;
+  padding: 16px 18px;
+  border: 0.5px solid var(--color-border, #ddd5c4);
+  border-radius: 2px;
+  background: var(--color-surface, #f4efe5);
+}
+
+.contactLabel {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  margin-bottom: 6px;
+}
+
+.contactText {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--color-text, #3f3832);
+  line-height: 1.5;
+}
+
+.contactLink {
+  color: var(--color-text-muted, #4b4331);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

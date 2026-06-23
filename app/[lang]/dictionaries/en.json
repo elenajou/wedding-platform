@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "{bride} & {groom} — Wedding Invitation",
+    "description": "You are cordially invited"
+  },
+  "envelope": {
+    "eyebrow": "You are cordially invited",
+    "names": "{bride} & {groom}",
+    "dearGuest": "Dear {name},",
+    "dearGuestFallback": "Dear Guest,",
+    "letterBody": "your invitation awaits inside.",
+    "viewInvitation": "View your invitation",
+    "needHelp": "Need help?",
+    "contactCoordinator": "Contact our coordinator",
+    "fromLine": "From: {bride} & {groom}",
+    "toPhone": "To (phone number)",
+    "toCode": "To (invite code)",
+    "phonePlaceholder": "+1 416 555 0123",
+    "codePlaceholder": "e.g. JOHN24",
+    "errorEmpty": "Please enter your {mode}",
+    "modePhone": "phone number",
+    "modeCode": "invitation code",
+    "errorNotFound": "We couldn't find your invitation. Please check your details.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "useInstead": "Use instead:",
+    "inviteCode": "invite code",
+    "phoneNumber": "phone number",
+    "hintSending": "Sending your details...",
+    "hintDefault": "Fill in your details, then tap the seal",
+    "postmarkTop": "Wedding",
+    "postmarkDate": ""
+  },
+  "hero": {
+    "eyebrow": "Together with their families",
+    "tagline": "request the honour of your presence",
+    "weddingDate": "On our special date",
+    "dearGreeting": "Dear {name},<br/>we joyfully invite you to celebrate the wedding of",
+    "fallbackGreeting": "We joyfully invite you to celebrate the wedding of"
+  },
+  "countdown": {
+    "label": "Counting down",
+    "pastMessage": "Today we celebrate",
+    "days": "Days",
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "seconds": "Seconds",
+    "message": ""
+  },
+  "seating": {
+    "sectionLabel": "Your seating",
+    "tableLabel": "You are seated at",
+    "tableTBC": "To be confirmed",
+    "table": "Table",
+    "membersLabel": "In your party",
+    "youBadge": "You",
+    "seatsTextSingular": "This invitation is for<br/><strong>{count}</strong> guest total",
+    "seatsTextPlural": "This invitation is for<br/><strong>{count}</strong> guests total",
+    "seatSingular": "seat",
+    "seatPlural": "seats",
+    "guestSingular": "guest",
+    "guestPlural": "guests"
+  },
+  "rsvp": {
+    "sectionLabel": "Kindly reply",
+    "deadline": "By the {deadline}",
+    "nameLabel": "Your full name",
+    "namePlaceholder": "Your name",
+    "attendanceLabel": "Attendance",
+    "accepts": "Accepts",
+    "declines": "Declines",
+    "guestCountLabel": "Number of guests attending (max {max})",
+    "messageLabel": "Message to the couple",
+    "messagePlaceholder": "Share your wishes...",
+    "errorName": "Please enter your name.",
+    "errorAttendance": "Please indicate whether you will attend.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "sending": "Sending...",
+    "sendReply": "Send reply",
+    "successYes": "Thank you, {name} — we cannot wait to celebrate with you.",
+    "successNo": "We will miss you, {name}. Thank you for letting us know.",
+    "successSub": "Your RSVP has been received",
+    "rsvpDeadline": ""
+  },
+  "schedule": {
+    "sectionLabel": "Schedule of the day",
+    "happeningNow": "Happening now",
+    "events": []
+  },
+  "video": {
+    "title": "Our story",
+    "playLabel": "Play video",
+    "dataNotePlaying": "Video is now playing.",
+    "dataNoteIdle": "Video loads only when you tap play — keeping your data usage low."
+  },
+  "gallery": {
+    "title": "Before the big day",
+    "subtitle": "A few moments from our journey together",
+    "close": "Close",
+    "previous": "Previous",
+    "next": "Next",
+    "countOf": "{current} of {total}",
+    "photos": []
+  },
+  "faq": {
+    "sectionLabel": "Frequently asked",
+    "contactLabel": "Still have questions?",
+    "contactText": "Please reach out to {coordinator} rather than contacting the couple directly in the lead-up to the day.",
+    "items": [],
+    "close": "Close invitation"
+  },
+  "languageSwitcher": {
+    "label": "Language"
+  }
+}

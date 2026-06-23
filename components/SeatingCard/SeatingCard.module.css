@@ -1,0 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:ital,wght@0,400;1,400&display=swap');
+
+.section {
+  padding: 3rem 2rem;
+  border-bottom: 0.5px solid var(--color-border, #e0d8c8);
+  font-family: 'EB Garamond', serif;
+}
+
+.sectionLabel {
+  font-size: 18px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--section-color, var(--color-text-muted, #4b4331));
+  margin-bottom: 1.75rem;
+}
+
+.card {
+  border: 0.5px solid var(--color-border, #ddd5c4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cardHeader {
+  background: var(--button-background, #2e2a24);
+  padding: 18px 20px;
+  text-align: center;
+}
+
+.tableLabel {
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--color-primary, #b7a476);
+  margin-bottom: 4px;
+}
+
+.tableName {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--button-text, #f4efe5);
+  line-height: 1.1;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto;
+  margin-top: 10px;
+  width: 50%;
+}
+.ruleLine { flex: 1; height: 0.5px; background: var(--color-primary, #b7a476); }
+.ruleDot { width: 3px; height: 3px; border-radius: 50%; background: var(--color-primary, #b7a476); flex-shrink: 0; }
+
+.cardBody {
+  padding: 20px;
+  background: var(--color-background, #faf7f2);
+}
+
+.groupName {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 23px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.membersLabel {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  margin-bottom: 10px;
+}
+
+.memberList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.memberItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--color-border, #ede8dc);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+}
+
+.memberItem:last-child {
+  border-bottom: none;
+}
+
+.memberDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary, #b8a878);
+  flex-shrink: 0;
+}
+
+.memberTable {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted, #7a6f5e);
+  font-style: italic;
+}
+
+.youBadge {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  border: 0.5px solid var(--color-border, #c4b89a);
+  padding: 2px 7px;
+  border-radius: 1px;
+}
+
+.seatsFooter {
+  background: var(--color-surface, #f4efe5);
+  border: 0.5px solid var(--color-border, #ddd5c4);
+  border-radius: 1px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.seatsText {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--color-text-muted, #554d42);
+  line-height: 1.4;
+}
+
+.seatsCount {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 37px;
+  font-weight: 300;
+  color: var(--color-text, #201d19);
+  line-height: 1;
+}
+
+.seatsUnit {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #4b4331);
+  display: block;
+  text-align: right;
+  margin-top: 2px;
+}

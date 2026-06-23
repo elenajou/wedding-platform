@@ -1,0 +1,12 @@
+{
+  "apphosting": {
+    "backendId": "wedding-platform",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log"
+    ]
+  }
+}

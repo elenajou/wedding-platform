@@ -18,7 +18,7 @@ function Ring({ value, max, label }: { value: number; max: number; label: string
   const pct = Math.max(0, Math.min(1, value / max))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <svg width="88" height="88" viewBox="0 0 88 88" style={{ transform: 'rotate(-90deg)' }}>
+      <svg width="80" height="80" viewBox="0 0 88 88" style={{ transform: 'rotate(-90deg)' }}>
         <circle cx="44" cy="44" r={R} fill="none" stroke="var(--color-border)" strokeWidth="3" />
         <circle
           cx="44" cy="44" r={R} fill="none"
@@ -50,13 +50,13 @@ export default function Circular({ targetDate, dict }: CountdownTemplateProps) {
   }, [targetDate])
 
   return (
-    <section style={{ padding: '4rem 2rem', textAlign: 'center', background: 'var(--color-background)' }}>
+    <section style={{ padding: '4rem 1rem', textAlign: 'center', background: 'var(--color-background)' }}>
       {dict.message && <p style={{ fontFamily: "'EB Garamond', serif", fontStyle: 'italic', fontSize: 18, color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>{dict.message}</p>}
       <p style={{ fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--color-primary)', marginBottom: '2.5rem' }}>{dict.label}</p>
       {isPast ? (
         <p style={{ fontFamily: "'EB Garamond', serif", fontSize: 22, fontStyle: 'italic', color: 'var(--color-text)' }}>{dict.pastMessage}</p>
       ) : (
-        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'nowrap' }}>
           <Ring value={tl?.days ?? 0} max={365} label={dict.days} />
           <Ring value={tl?.hours ?? 0} max={24} label={dict.hours} />
           <Ring value={tl?.minutes ?? 0} max={60} label={dict.minutes} />

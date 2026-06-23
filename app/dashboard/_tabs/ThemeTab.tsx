@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { SECTION_DESIGNS, type SectionKey } from '@/themes/section-designs'
 import { getAllColorSchemes, getColorScheme } from '@/themes/color-schemes'
 import TemplatePreview from './_TemplatePreview'
@@ -40,21 +40,23 @@ type Props = {
 
 const PHONE_W = 450
 const PHONE_H = 1000
-const PREVIEW_W = 250
+const PREVIEW_W = 200
 const SCALE = PREVIEW_W / PHONE_W
 const PREVIEW_H = Math.round(PHONE_H * SCALE)
 
 // ── Preview FadeIn (no animations — shows immediately for the live panel) ────
 
 function PreviewFadeIn({ section, children }: { section: SectionRow; children: React.ReactNode }) {
-  const style: React.CSSProperties & Record<string, string> = {}
+  const style: React.CSSProperties & Record<string, string> = {
+    width: '100%',
+    backgroundColor: section.background_color ?? 'var(--color-background)',
+  }
   if (section.background_url) {
     style.backgroundImage = `url(${section.background_url})`
     style.backgroundSize = 'cover'
     style.backgroundPosition = 'center'
     style.position = 'relative'
   }
-  if (section.background_color) style.backgroundColor = section.background_color
   if (section.font_color) style['--section-color'] = section.font_color
 
   return (
@@ -67,7 +69,7 @@ function PreviewFadeIn({ section, children }: { section: SectionRow; children: R
             : `rgba(255,255,255,${Math.abs(section.overlay_opacity)})`,
         }} />
       )}
-      <div style={section.background_url ? { position: 'relative', zIndex: 1 } : undefined}>
+      <div style={section.background_url ? { position: 'relative', zIndex: 1, width: '100%' } : { width: '100%' }}>
         {children}
       </div>
     </div>
@@ -344,6 +346,42 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
   const [error, setError] = useState('')
   const [openSection, setOpenSection] = useState<string | null>(activeSectionKeys[0] ?? null)
 
+  const previewContainerRef = useRef<HTMLDivElement>(null)
+  const sectionElRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const isDragging = useRef(false)
+  const dragStartY = useRef(0)
+  const dragStartScrollTop = useRef(0)
+  const [grabbing, setGrabbing] = useState(false)
+
+  useEffect(() => {
+    if (!openSection || !previewContainerRef.current) return
+    const el = sectionElRefs.current[openSection]
+    if (!el) return
+    const container = previewContainerRef.current
+    const containerRect = container.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+    container.scrollTo({ top: elRect.top - containerRect.top + container.scrollTop, behavior: 'smooth' })
+  }, [openSection])
+
+  useEffect(() => {
+    function onMouseUp() { isDragging.current = false; setGrabbing(false) }
+    window.addEventListener('mouseup', onMouseUp)
+    return () => window.removeEventListener('mouseup', onMouseUp)
+  }, [])
+
+  function onPreviewMouseDown(e: React.MouseEvent) {
+    isDragging.current = true
+    dragStartY.current = e.clientY
+    dragStartScrollTop.current = previewContainerRef.current?.scrollTop ?? 0
+    setGrabbing(true)
+    e.preventDefault()
+  }
+
+  function onPreviewMouseMove(e: React.MouseEvent) {
+    if (!isDragging.current || !previewContainerRef.current) return
+    previewContainerRef.current.scrollTop = dragStartScrollTop.current - (e.clientY - dragStartY.current)
+  }
+
   function update(key: string, patch: Partial<SectionRow>) {
     setSections(prev => prev.map(s => s.section_key === key ? { ...s, ...patch } : s))
     setSaved(false)
@@ -377,8 +415,6 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
       }
     } catch { setError('Error de red') } finally { setSaving(false) }
   }
-
-  const currentSection = sections.find(s => s.section_key === openSection)
 
   return (
     <div>
@@ -597,12 +633,11 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
           </div>
         </div>
 
-        {/* ── Right: live preview (iPhone 14 Pro Max dimensions) ── */}
-        <div style={{ width: PREVIEW_W + 20, flexShrink: 0, position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
+        {/* ── Right: scrollable full-invitation preview ── */}
+        <div style={{ width: PREVIEW_W, flexShrink: 0, position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
 
-          {/* Panel label */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ ...th, fontSize: 9 }}>Vista previa — iPhone 14 Pro Max</span>
+            <span style={{ ...th, fontSize: 9 }}>Vista previa</span>
             {openSection && (
               <span style={{ fontSize: 12, color: '#b08d57', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>
                 {SECTION_LABELS[openSection] ?? openSection}
@@ -610,82 +645,40 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
             )}
           </div>
 
-          {/* Phone frame — screen-edge design (Dynamic Island inside) */}
-          <div style={{
-            width: PREVIEW_W + 14,
-            background: '#1c1c1e',
-            borderRadius: 36,
-            padding: '7px',
-            boxShadow: '0 0 0 1px #3a3a3c, inset 0 0 0 1px #2c2c2e, 0 24px 64px rgba(0,0,0,0.5)',
-          }}>
-            {/* Screen — Dynamic Island + content + home bar all live inside */}
-            <div style={{
+          <style>{`#theme-preview::-webkit-scrollbar{display:none}`}</style>
+          <div
+            id="theme-preview"
+            ref={previewContainerRef}
+            onMouseDown={onPreviewMouseDown}
+            onMouseMove={onPreviewMouseMove}
+            style={{
               width: PREVIEW_W,
               height: PREVIEW_H,
-              overflow: 'hidden',
-              borderRadius: 29,
-              background: currentSection
-                ? (currentSection.background_color ?? getColorScheme(currentSection.color_scheme).colorBackground)
-                : '#faf7f2',
-              position: 'relative',
-            }}>
-              {/* Content */}
-              {currentSection ? (
-                <div style={{
-                  width: PHONE_W,
-                  position: 'absolute',
-                  top: 0,
-                  left: '50%',
-                  transform: `translateX(-50%) scale(${SCALE})`,
-                  transformOrigin: 'top center',
-                  pointerEvents: 'none',
-                  userSelect: 'none',
-                  paddingTop: Math.round(44 / SCALE),
-                }}>
-                  <SectionTheme sectionCfg={{ colorScheme: currentSection.color_scheme, fontColor: currentSection.font_color ?? '' }}>
-                    <PreviewFadeIn section={currentSection}>
-                      {renderPreviewSection(openSection!, currentSection, weddingDetails)}
+              overflowY: 'scroll',
+              overflowX: 'hidden',
+              scrollbarWidth: 'none',
+              borderRadius: 12,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+              cursor: grabbing ? 'grabbing' : 'grab',
+              userSelect: 'none',
+            }}
+          >
+            <div style={{ width: PHONE_W, zoom: SCALE, overflowX: 'hidden' }}>
+              {sections.map(section => (
+                <div
+                  key={section.section_key}
+                  ref={el => { sectionElRefs.current[section.section_key] = el }}
+                  style={openSection === section.section_key
+                    ? { overflow: 'hidden', outline: '2px solid #b08d57', outlineOffset: -2, zIndex: 1, position: 'relative' }
+                    : { overflow: 'hidden' }}
+                >
+                  <SectionTheme sectionCfg={{ colorScheme: section.color_scheme, fontColor: section.font_color ?? '' }}>
+                    <PreviewFadeIn section={section}>
+                      {renderPreviewSection(section.section_key, section, weddingDetails)}
                     </PreviewFadeIn>
                   </SectionTheme>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", fontSize: 14, textAlign: 'center', padding: '0 20px' }}>
-                  Abre una sección para ver la vista previa
-                </div>
-              )}
-
-              {/* Dynamic Island — pill cutout overlaid on screen */}
-              <div style={{
-                position: 'absolute', top: 10, left: '50%',
-                transform: 'translateX(-50%)',
-                width: Math.round(PREVIEW_W * 0.34),
-                height: 20,
-                background: '#0a0a0a',
-                borderRadius: 10,
-                zIndex: 20,
-                boxShadow: '0 0 0 1px #1c1c1e',
-              }}>
-                {/* Front camera dot */}
-                <div style={{
-                  position: 'absolute', right: 10, top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 7, height: 7,
-                  borderRadius: '50%',
-                  background: '#1a2a2a',
-                  boxShadow: 'inset 0 0 0 1.5px #0d1a1a',
-                }} />
-              </div>
-
-              {/* Home indicator — inside screen at bottom */}
-              <div style={{
-                position: 'absolute', bottom: 6, left: '50%',
-                transform: 'translateX(-50%)',
-                width: Math.round(PREVIEW_W * 0.36),
-                height: 4,
-                background: 'rgba(0,0,0,0.25)',
-                borderRadius: 2,
-                zIndex: 20,
-              }} />
+              ))}
             </div>
           </div>
 

@@ -49,23 +49,24 @@ export default function Film({ targetDate, dict }: CountdownTemplateProps) {
         <p style={{ fontFamily: "'EB Garamond', serif", fontSize: 22, fontStyle: 'italic', color: 'var(--color-text)' }}>{dict.pastMessage}</p>
       ) : (
         <div style={{
-          display: 'inline-flex', alignItems: 'stretch', gap: 0,
+          display: 'flex', alignItems: 'stretch', gap: 0,
           background: '#1a1a1a', borderRadius: 4, overflow: 'hidden',
           boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+          maxWidth: '100%',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', background: '#111' }}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', background: '#111', flexShrink: 0 }}>
             <Sprockets />
           </div>
 
           {units.map(({ key, label }, i) => (
-            <div key={key} style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.2rem 1rem', minWidth: 64 }}>
-                <span style={{ fontFamily: "'EB Garamond', serif", fontSize: 'clamp(1.8rem,5vw,2.8rem)', fontWeight: 300, lineHeight: 1, color: '#f4e9d0' }}>
+            <div key={key} style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.2rem 0.5rem', width: '100%' }}>
+                <span style={{ fontFamily: "'EB Garamond', serif", fontSize: '2.2rem', fontWeight: 300, lineHeight: 1, color: '#f4e9d0' }}>
                   {tl !== null ? String(tl[key]).padStart(2, '0') : '--'}
                 </span>
                 <span style={{ fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#8a7a60', marginTop: 6 }}>{label}</span>
               </div>
-              {i < 3 && <div style={{ width: '0.5px', background: '#333', alignSelf: 'stretch' }} />}
+              {i < 3 && <div style={{ width: '0.5px', background: '#333', alignSelf: 'stretch', flexShrink: 0 }} />}
             </div>
           ))}
 

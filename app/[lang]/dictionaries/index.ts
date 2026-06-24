@@ -8,9 +8,11 @@ import {
   getWeddingPhotos,
   getWeddingLocations,
   getSectionConfig,
+  getHeroElements,
   type WeddingDetails,
   type SectionConfigMap,
   type LocationItem,
+  type HeroElement,
 } from '@/lib/wedding-data'
 
 const dictionaries = {
@@ -46,6 +48,7 @@ export type WeddingDetailsClient = {
   letterBodyText: string | null
   sections: SectionConfigMap
   locations: LocationItem[]
+  heroElements: HeroElement[]
 }
 
 export type LocaleLetterData = {
@@ -114,7 +117,7 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
 }> {
   const weddingId = await getWeddingId()
 
-  const [staticDict, details, schedule, faq, photos, locations, sections] = await Promise.all([
+  const [staticDict, details, schedule, faq, photos, locations, sections, heroElements] = await Promise.all([
     getDictionary(locale),
     getWeddingDetails(weddingId),
     getWeddingSchedule(weddingId),
@@ -122,6 +125,7 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
     getWeddingPhotos(weddingId),
     getWeddingLocations(weddingId),
     getSectionConfig(weddingId),
+    getHeroElements(weddingId),
   ])
 
   const brideName = details.bride_name
@@ -166,6 +170,7 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
     letterBodyText: lc.letter_body_text ?? details.letter_body_text ?? null,
     sections,
     locations,
+    heroElements,
   }
 
   return { dict, weddingDetails }

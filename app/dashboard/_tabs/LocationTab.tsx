@@ -3,24 +3,20 @@
 import { useState } from 'react'
 import { dt } from '@/lib/dashboard-i18n'
 
-type Location = { id: string; sort_order: number; title: string; address: string; maps_link: string; waze_link: string }
+type Location = { id: string; sort_order: number; title: string; address: string; maps_link: string; waze_link: string; embed_url: string }
 type Props = { initialItems: Location[]; locale?: string }
 
 const field: React.CSSProperties = { padding: '6px 8px', background: '#fff', border: '0.5px solid #d4cbbf', fontFamily: "'EB Garamond', serif", fontSize: 15, color: '#201d19', outline: 'none', borderRadius: 1, width: '100%', boxSizing: 'border-box' }
 const btn = (bg = '#b08d57'): React.CSSProperties => ({ padding: '6px 14px', background: bg, color: bg === '#b08d57' ? '#fff' : '#201d19', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 1 })
 const lbl: React.CSSProperties = { fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }
 
-const blank = { sort_order: '0', title: '', address: '', maps_link: '', waze_link: '' }
-type EditState = { id: string; sort_order: string; title: string; address: string; maps_link: string; waze_link: string }
-
-function mapsEmbedUrl(address: string) {
-  return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
-}
+const blank = { sort_order: '0', title: '', address: '', maps_link: '', waze_link: '', embed_url: '' }
+type EditState = { id: string; sort_order: string; title: string; address: string; maps_link: string; waze_link: string; embed_url: string }
 
 function LocationFields({
   values, onChange,
 }: {
-  values: { title: string; address: string; maps_link: string; waze_link: string }
+  values: { title: string; address: string; maps_link: string; waze_link: string; embed_url: string }
   onChange: (key: string, val: string) => void
 }) {
   return (
@@ -37,7 +33,7 @@ function LocationFields({
           <input style={field} placeholder="ej. Av. Reforma 123, Ciudad de México" value={values.address} onChange={e => onChange('address', e.target.value)} />
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
         <div>
           <div style={lbl}>Enlace de Google Maps</div>
           <input style={field} type="url" placeholder="https://maps.app.goo.gl/…" value={values.maps_link} onChange={e => onChange('maps_link', e.target.value)} />
@@ -46,6 +42,11 @@ function LocationFields({
           <div style={lbl}>Enlace de Waze</div>
           <input style={field} type="url" placeholder="https://waze.com/ul?ll=…" value={values.waze_link} onChange={e => onChange('waze_link', e.target.value)} />
         </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <div style={lbl}>URL del mapa integrado (embed)</div>
+        <input style={field} type="url" placeholder="https://www.google.com/maps/embed?pb=…" value={values.embed_url} onChange={e => onChange('embed_url', e.target.value)} />
+        <div style={{ fontSize: 10, color: '#7a6e5f', marginTop: 3 }}>En Google Maps: Compartir → Insertar un mapa → copiar sólo el valor del atributo <em>src</em></div>
       </div>
     </>
   )
@@ -165,10 +166,10 @@ export default function LocationTab({ initialItems, locale }: Props) {
           <div key={item.id} style={{ padding: '1rem', background: '#fff', border: '0.5px solid #e0d8c8', borderRadius: 2 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
 
-              {item.address && (
+              {item.embed_url && (
                 <div style={{ flexShrink: 0, width: 140, height: 100, overflow: 'hidden', borderRadius: 2, border: '0.5px solid #e0d8c8' }}>
                   <iframe
-                    src={mapsEmbedUrl(item.address)}
+                    src={item.embed_url}
                     width="140"
                     height="100"
                     style={{ border: 0, display: 'block' }}
@@ -195,7 +196,7 @@ export default function LocationTab({ initialItems, locale }: Props) {
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), title: item.title, address: item.address, maps_link: item.maps_link, waze_link: item.waze_link })} style={btn('#e8e0d4')}>{T('edit')}</button>
+                  <button onClick={() => setEditing({ id: item.id, sort_order: String(item.sort_order), title: item.title, address: item.address, maps_link: item.maps_link, waze_link: item.waze_link, embed_url: item.embed_url })} style={btn('#e8e0d4')}>{T('edit')}</button>
                   <button onClick={() => handleDelete(item.id)} style={btn('#f5ebe8')}>{T('delete')}</button>
                   {idx > 0 && <button type="button" onClick={() => handleMove(item, -1)} style={btn('#e8e0d4')}>↑</button>}
                   {idx < sorted.length - 1 && <button type="button" onClick={() => handleMove(item, 1)} style={btn('#e8e0d4')}>↓</button>}

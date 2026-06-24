@@ -175,9 +175,29 @@ CREATE TABLE IF NOT EXISTS wedding_locations (
   address     text NOT NULL DEFAULT '',
   maps_link   text NOT NULL DEFAULT '',
   waze_link   text NOT NULL DEFAULT '',
+  embed_url   text NOT NULL DEFAULT '',
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_wedding_locations_wedding_id ON wedding_locations (wedding_id);
+
+-- ── Hero elements ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS hero_elements (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id   uuid NOT NULL REFERENCES weddings(id) ON DELETE CASCADE,
+  sort_order   integer NOT NULL DEFAULT 0,
+  element_type text NOT NULL DEFAULT 'text',
+  content      text NOT NULL DEFAULT '',
+  locale_content jsonb NOT NULL DEFAULT '{}',
+  font_family  text NOT NULL DEFAULT '',
+  font_style   text NOT NULL DEFAULT 'normal',
+  font_weight  text NOT NULL DEFAULT '400',
+  font_size      text NOT NULL DEFAULT '',
+  letter_spacing text NOT NULL DEFAULT '',
+  font_color     text NOT NULL DEFAULT '',
+  visible        boolean NOT NULL DEFAULT true,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_hero_elements_wedding_id ON hero_elements (wedding_id);
 
 -- ── Seed: example wedding (replace values before running) ─────────────────
 

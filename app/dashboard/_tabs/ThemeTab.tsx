@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { dt } from '@/lib/dashboard-i18n'
 import { SECTION_DESIGNS, type SectionKey } from '@/themes/section-designs'
 import { getAllColorSchemes, getColorScheme } from '@/themes/color-schemes'
+import { WEDDING_FONTS } from '@/lib/google-fonts'
+import type { HeroElement, HeroElementType } from '@/lib/wedding-data'
 import TemplatePreview from './_TemplatePreview'
 import SectionTheme from '@/components/SectionTheme'
 import InvitationHero from '@/components/InvitationHero'
@@ -37,6 +39,7 @@ type Props = {
   activeSectionKeys: string[]
   weddingDetails?: Record<string, unknown> | null
   locale?: string
+  initialHeroElements: HeroElement[]
 }
 
 // ── Preview dimensions (iPhone 14 Pro Max logical pixels) ────────────────────
@@ -225,7 +228,7 @@ const colorSchemes = getAllColorSchemes()
 
 // ── Live preview renderer ─────────────────────────────────────────────────────
 
-function renderPreviewSection(key: string, section: SectionRow, wd: Record<string, unknown> | null | undefined) {
+function renderPreviewSection(key: string, section: SectionRow, wd: Record<string, unknown> | null | undefined, heroElements?: HeroElement[]) {
   const design = section.design
   const brideName = (wd?.bride_name as string) || 'Sofia'
   const groomName = (wd?.groom_name as string) || 'Marco'
@@ -252,12 +255,9 @@ function renderPreviewSection(key: string, section: SectionRow, wd: Record<strin
           groomName={groomName}
           guestName="Elena"
           groupName="Preview Guest"
-          namesFontUrl={(wd?.names_font_url as string) || null}
-          heroTagline={(wd?.hero_tagline as string) || null}
-          heroEyebrow={(wd?.hero_eyebrow as string) || null}
-          heroGreeting={(wd?.hero_greeting as string) || null}
-          heroBodyText={(wd?.hero_body_text as string) || null}
           backgroundUrl={section.background_url || undefined}
+          overlayOpacity={section.overlay_opacity}
+          elements={heroElements ?? []}
           dict={PREVIEW_DICT.hero}
           design={design}
         />
@@ -335,8 +335,312 @@ function renderPreviewSection(key: string, section: SectionRow, wd: Record<strin
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ThemeTab({ initialSections, enabledDesigns, activeSectionKeys, weddingDetails, locale }: Props) {
+// Stepper for CSS values — displays only the number, stores with unit appended
+function CSSValueStepper({ value, onChange, step = 1, unit = 'px', placeholder, style }: {
+  value: string; onChange: (v: string) => void
+  step?: number; unit?: string; placeholder?: string; style?: React.CSSProperties
+}) {
+  const inputStyle: React.CSSProperties = {
+    padding: '0 4px', background: '#fff', border: 'none',
+    fontFamily: "'EB Garamond', serif", fontSize: 12, color: '#201d19',
+    outline: 'none', width: 30, textAlign: 'center', height: 26, boxSizing: 'border-box',
+  }
+  const arrowBtn: React.CSSProperties = {
+    background: 'none', border: 'none', cursor: 'pointer', color: '#9a9080',
+    fontSize: 10, padding: '0 3px', lineHeight: 1, height: 26, display: 'flex', alignItems: 'center',
+  }
+  const numStr = value.match(/^(-?[\d.]+)/)?.[1] ?? ''
+  function step_(dir: 1 | -1) {
+    const num = numStr ? parseFloat(numStr) : 0
+    const next = Math.round((num + dir * step) * 1000) / 1000
+    onChange(`${next}${unit}`)
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', border: '0.5px solid #d4cbbf', borderRadius: 1, overflow: 'hidden', height: 26, ...style }}>
+      <button type="button" style={arrowBtn} onClick={() => step_(-1)}>−</button>
+      <input
+        style={inputStyle}
+        value={numStr}
+        onChange={e => onChange(e.target.value ? `${e.target.value}${unit}` : '')}
+        placeholder={placeholder}
+      />
+      <button type="button" style={arrowBtn} onClick={() => step_(1)}>+</button>
+    </div>
+  )
+}
+
+// ── HeroElementsPanel ─────────────────────────────────────────────────────────
+
+const ELEMENT_TYPE_LABELS: Record<HeroElementType, string> = {
+  eyebrow: 'Eyebrow',
+  names: 'Names',
+  greeting: 'Greeting',
+  body: 'Body',
+  tagline: 'Tagline',
+  date: 'Date',
+}
+
+const HERO_ELEMENT_TYPES: HeroElementType[] = ['eyebrow', 'names', 'greeting', 'body', 'tagline', 'date']
+
+function HeroElementsPanel({
+  elements,
+  onChange,
+  locales,
+  defaultLocale,
+}: {
+  elements: HeroElement[]
+  onChange: (updated: HeroElement[]) => void
+  locales?: string[]
+  defaultLocale?: string
+}) {
+  const [newType, setNewType] = useState<HeroElementType>('eyebrow')
+  const [adding, setAdding] = useState(false)
+  const dl = defaultLocale ?? 'es'
+  const allLocales = locales && locales.length > 0 ? locales : [dl]
+  const [activeLang, setActiveLang] = useState(dl)
+
+  function updateEl(id: string, patch: Partial<HeroElement>) {
+    onChange(elements.map(e => e.id === id ? { ...e, ...patch } : e))
+  }
+
+  function updateLocaleContent(id: string, locale: string, val: string) {
+    const el = elements.find(e => e.id === id)
+    if (!el) return
+    onChange(elements.map(e => e.id === id ? {
+      ...e,
+      locale_content: { ...(e.locale_content ?? {}), [locale]: val },
+    } : e))
+  }
+
+  async function addElement() {
+    setAdding(true)
+    try {
+      const maxOrder = elements.length > 0 ? Math.max(...elements.map(e => e.sort_order)) : 0
+      const res = await fetch('/api/dashboard/hero-elements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sort_order: maxOrder + 10,
+          element_type: newType,
+          content: '',
+          locale_content: {},
+          font_family: '',
+          font_style: 'normal',
+          font_weight: '400',
+          visible: true,
+        }),
+      })
+      if (res.ok) {
+        const created = await res.json()
+        onChange([...elements, created])
+      }
+    } finally { setAdding(false) }
+  }
+
+  async function deleteElement(id: string) {
+    await fetch(`/api/dashboard/hero-elements/${id}`, { method: 'DELETE' })
+    onChange(elements.filter(e => e.id !== id))
+  }
+
+  function moveElement(id: string, dir: -1 | 1) {
+    const idx = elements.findIndex(e => e.id === id)
+    const next = idx + dir
+    if (next < 0 || next >= elements.length) return
+    const arr = [...elements]
+    const aOrder = arr[idx].sort_order
+    const bOrder = arr[next].sort_order
+    arr[idx] = { ...arr[idx], sort_order: bOrder }
+    arr[next] = { ...arr[next], sort_order: aOrder }
+    onChange([...arr].sort((a, b) => a.sort_order - b.sort_order))
+  }
+
+  const sorted = [...elements].sort((a, b) => a.sort_order - b.sort_order)
+
+  const compactInput: React.CSSProperties = {
+    padding: '4px 6px', background: '#fff', border: '0.5px solid #d4cbbf',
+    fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#201d19',
+    outline: 'none', borderRadius: 1, boxSizing: 'border-box', height: 26,
+  }
+  const compactSelect: React.CSSProperties = { ...compactInput, cursor: 'pointer' }
+  const moveBtn = (disabled: boolean): React.CSSProperties => ({
+    background: 'none', border: 'none', cursor: disabled ? 'default' : 'pointer',
+    color: '#9a9080', opacity: disabled ? 0.25 : 1, padding: '0 1px', fontSize: 10, lineHeight: 1,
+  })
+
+  const tabBtn = (active: boolean): React.CSSProperties => ({
+    padding: '3px 10px', border: 'none', background: active ? '#fff' : 'transparent',
+    borderBottom: active ? '1.5px solid #b08d57' : '1.5px solid transparent',
+    fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase',
+    color: active ? '#b08d57' : '#9a9080', cursor: 'pointer',
+    fontFamily: "'EB Garamond', serif",
+  })
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <style>{`.hero-el-row::-webkit-scrollbar{height:3px}.hero-el-row::-webkit-scrollbar-track{background:transparent}.hero-el-row::-webkit-scrollbar-thumb{background:#d4cbbf;border-radius:2px}.hero-el-row{scrollbar-width:thin;scrollbar-color:#d4cbbf transparent}`}</style>
+      {/* Single language tab strip for all elements */}
+      {allLocales.length > 1 && (
+        <div style={{ display: 'flex', borderBottom: '0.5px solid #e0d8c8', marginBottom: 2 }}>
+          {allLocales.map(lc => (
+            <button key={lc} onClick={() => setActiveLang(lc)} style={tabBtn(activeLang === lc)}>{lc}</button>
+          ))}
+        </div>
+      )}
+
+      {sorted.map((el, idx) => (
+        <div key={el.id} className="hero-el-row" style={{ overflowX: 'auto', background: '#fff', border: '0.5px solid #e0d8c8', borderRadius: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', minWidth: 'max-content' }}>
+          {/* Move */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <button onClick={() => moveElement(el.id, -1)} disabled={idx === 0} style={moveBtn(idx === 0)}>▲</button>
+            <button onClick={() => moveElement(el.id, 1)} disabled={idx === sorted.length - 1} style={moveBtn(idx === sorted.length - 1)}>▼</button>
+          </div>
+          {/* Type badge */}
+          <span style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#b08d57', fontFamily: "'EB Garamond', serif", whiteSpace: 'nowrap', minWidth: 52 }}>
+            {ELEMENT_TYPE_LABELS[el.element_type as HeroElementType] ?? el.element_type}
+          </span>
+          {/* Content input for active language */}
+          {el.element_type !== 'names' ? (
+            activeLang === dl ? (
+              <input
+                style={{ ...compactInput, flex: 1, minWidth: 60 }}
+                value={el.content}
+                onChange={e => updateEl(el.id, { content: e.target.value })}
+                placeholder="content"
+              />
+            ) : (
+              <input
+                style={{ ...compactInput, flex: 1, minWidth: 60 }}
+                value={el.locale_content?.[activeLang] ?? ''}
+                onChange={e => updateLocaleContent(el.id, activeLang, e.target.value)}
+                placeholder={`${activeLang} content`}
+              />
+            )
+          ) : (
+            <span style={{ flex: 1, fontSize: 11, color: '#9a9080', fontStyle: 'italic' }}>auto</span>
+          )}
+          {/* Font */}
+          <select
+            style={{ ...compactSelect, width: 130 }}
+            value={el.font_family}
+            onChange={e => updateEl(el.id, { font_family: e.target.value })}
+          >
+            <option value="">EB Garamond</option>
+            <optgroup label="Script">
+              {WEDDING_FONTS.filter(f => f.category === 'script').map(f => (
+                <option key={f.family} value={f.family}>{f.family}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Serif">
+              {WEDDING_FONTS.filter(f => f.category === 'serif').map(f => (
+                <option key={f.family} value={f.family}>{f.family}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Display">
+              {WEDDING_FONTS.filter(f => f.category === 'display').map(f => (
+                <option key={f.family} value={f.family}>{f.family}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Sans-serif">
+              {WEDDING_FONTS.filter(f => f.category === 'sans-serif').map(f => (
+                <option key={f.family} value={f.family}>{f.family}</option>
+              ))}
+            </optgroup>
+          </select>
+          {/* Weight */}
+          <select
+            style={{ ...compactSelect, width: 72 }}
+            value={el.font_weight}
+            onChange={e => updateEl(el.id, { font_weight: e.target.value })}
+          >
+            <option value="300">Thin</option>
+            <option value="400">Regular</option>
+            <option value="700">Bold</option>
+          </select>
+          {/* Size */}
+          <CSSValueStepper
+            value={el.font_size ?? ''}
+            onChange={v => updateEl(el.id, { font_size: v })}
+            step={1} unit="px" placeholder="size"
+          />
+          {/* Letter spacing */}
+          <CSSValueStepper
+            value={el.letter_spacing ?? ''}
+            onChange={v => updateEl(el.id, { letter_spacing: v })}
+            step={0.01} unit="em" placeholder="spacing"
+          />
+          {/* Font color */}
+          <input
+            type="color"
+            value={el.font_color || '#ffffff'}
+            onChange={e => updateEl(el.id, { font_color: e.target.value })}
+            style={{ width: 26, height: 26, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none', flexShrink: 0 }}
+            title="Font color"
+          />
+          {/* Italic */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <input
+              type="checkbox"
+              checked={el.font_style === 'italic'}
+              onChange={e => updateEl(el.id, { font_style: e.target.checked ? 'italic' : 'normal' })}
+              style={{ accentColor: '#b08d57', width: 11, height: 11 }}
+            />
+            <span style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7a6e5f' }}>I</span>
+          </label>
+          {/* Visible */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <input
+              type="checkbox"
+              checked={el.visible !== false}
+              onChange={e => updateEl(el.id, { visible: e.target.checked })}
+              style={{ accentColor: '#b08d57', width: 11, height: 11 }}
+            />
+            <span style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7a6e5f' }}>Vis</span>
+          </label>
+          {/* Delete */}
+          <button
+            onClick={() => deleteElement(el.id)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c4614a', fontSize: 12, padding: '0 2px', lineHeight: 1 }}
+            title="Delete"
+          >✕</button>
+        </div>
+        </div>
+      ))}
+
+      {/* Add new element */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+        <select
+          style={{ ...compactSelect, flex: 1 }}
+          value={newType}
+          onChange={e => setNewType(e.target.value as HeroElementType)}
+        >
+          {HERO_ELEMENT_TYPES.map(t => (
+            <option key={t} value={t}>{ELEMENT_TYPE_LABELS[t]}</option>
+          ))}
+        </select>
+        <button
+          onClick={addElement}
+          disabled={adding}
+          style={{
+            padding: '6px 14px', background: '#b08d57', color: '#fff', border: 'none',
+            fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.18em',
+            textTransform: 'uppercase', cursor: adding ? 'not-allowed' : 'pointer',
+            borderRadius: 1, opacity: adding ? 0.6 : 1, whiteSpace: 'nowrap',
+          }}
+        >
+          + Add
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export default function ThemeTab({ initialSections, enabledDesigns, activeSectionKeys, weddingDetails, locale, initialHeroElements }: Props) {
   const T = (k: string) => dt(k, locale)
+
+  const [heroElements, setHeroElements] = useState<HeroElement[]>(initialHeroElements)
 
   const [sections, setSections] = useState<SectionRow[]>(() => {
     const existing = Object.fromEntries(initialSections.map(s => [s.section_key, s]))
@@ -420,22 +724,31 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
   async function handleSave() {
     setSaving(true); setError(''); setSaved(false)
     try {
-      const res = await fetch('/api/dashboard/sections', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sections.map(s => ({
-          id: s.id,
-          section_key: s.section_key,
-          design: s.design,
-          color_scheme: s.color_scheme,
-          background_url: s.background_url || null,
-          background_color: s.background_color || null,
-          font_color: s.font_color || null,
-          overlay_opacity: s.overlay_opacity,
-          sort_order: s.sort_order,
-          visible: s.visible !== false,
-        }))),
-      })
+      const [res] = await Promise.all([
+        fetch('/api/dashboard/sections', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sections.map(s => ({
+            id: s.id,
+            section_key: s.section_key,
+            design: s.design,
+            color_scheme: s.color_scheme,
+            background_url: s.background_url || null,
+            background_color: s.background_color || null,
+            font_color: s.font_color || null,
+            overlay_opacity: s.overlay_opacity,
+            sort_order: s.sort_order,
+            visible: s.visible !== false,
+          }))),
+        }),
+        ...heroElements.map(el =>
+          fetch(`/api/dashboard/hero-elements/${el.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(el),
+          })
+        ),
+      ])
       if (res.ok) {
         const updated: SectionRow[] = await res.json()
         setSections(prev => prev.map(s => updated.find(u => u.section_key === s.section_key) ?? s))
@@ -662,6 +975,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                               </div>
                             </div>
 
+                            {key !== 'hero' && (
                             <div>
                               <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeFontColor')}</label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -679,6 +993,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                                 )}
                               </div>
                             </div>
+                            )}
                           </div>
 
                           {hasCustomBg && (
@@ -701,6 +1016,17 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                           )}
                         </div>
                       </div>
+
+                      {/* Content elements (hero only) */}
+                      {key === 'hero' && (
+                        <div style={{ marginTop: 20 }}>
+                          <p style={{ ...th, marginBottom: 10 }}>Content</p>
+                          <HeroElementsPanel
+                            elements={heroElements}
+                            onChange={setHeroElements}
+                          />
+                        </div>
+                      )}
 
                     </div>
                   )}
@@ -754,7 +1080,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                 >
                   <SectionTheme sectionCfg={{ colorScheme: section.color_scheme, fontColor: section.font_color ?? '' }}>
                     <PreviewFadeIn section={section}>
-                      {renderPreviewSection(section.section_key, section, weddingDetails)}
+                      {renderPreviewSection(section.section_key, section, weddingDetails, heroElements)}
                     </PreviewFadeIn>
                   </SectionTheme>
                 </div>

@@ -123,16 +123,48 @@ export type LocationItem = {
   address: string
   maps_link: string
   waze_link: string
+  embed_url: string
 }
 
 export async function getWeddingLocations(weddingId: string): Promise<LocationItem[]> {
   const rows = await sql`
-    SELECT id, sort_order, title, address, maps_link, waze_link
+    SELECT id, sort_order, title, address, maps_link, waze_link, embed_url
     FROM wedding_locations
     WHERE wedding_id = ${weddingId}
     ORDER BY sort_order
   `
   return rows as LocationItem[]
+}
+
+export type HeroElementType = 'eyebrow' | 'names' | 'greeting' | 'body' | 'tagline' | 'date'
+
+export type HeroElement = {
+  id: string
+  sort_order: number
+  element_type: HeroElementType
+  content: string
+  locale_content: Record<string, string>  // locale → content string
+  font_family: string
+  font_style: 'normal' | 'italic'
+  font_weight: string
+  font_size: string       // CSS value e.g. "2rem", "24px", or "" for template default
+  letter_spacing: string  // CSS value e.g. "0.1em", "2px", or "" for template default
+  font_color: string      // CSS color value e.g. "#ffffff", or "" for template default
+  visible: boolean
+}
+
+export async function getHeroElements(weddingId: string): Promise<HeroElement[]> {
+  const rows = await sql`
+    SELECT id, sort_order, element_type, content, locale_content, font_family, font_style, font_weight, font_size, letter_spacing, font_color, visible
+    FROM hero_elements
+    WHERE wedding_id = ${weddingId}
+    ORDER BY sort_order
+  `
+  return rows.map(r => ({
+    ...r,
+    locale_content: (r.locale_content ?? {}) as Record<string, string>,
+    visible: r.visible !== false,
+  })) as HeroElement[]
 }
 
 export async function getWeddingPhotos(weddingId: string): Promise<PhotoItem[]> {

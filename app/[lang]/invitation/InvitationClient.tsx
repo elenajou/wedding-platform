@@ -82,12 +82,10 @@ export default function InvitationClient({ dict, lang, weddingDetails, features 
         groomName={weddingDetails.groomName}
         guestName={guest?.guestName ?? 'Guest'}
         groupName={guest?.groupName ?? 'Group'}
-        namesFontUrl={weddingDetails.namesFontUrl}
-        heroTagline={weddingDetails.heroTagline}
-        heroEyebrow={weddingDetails.letterEyebrow}
-        heroGreeting={weddingDetails.letterGreeting}
-        heroBodyText={weddingDetails.letterBodyText}
         backgroundUrl={cfg('hero').backgroundUrl || undefined}
+        overlayOpacity={cfg('hero').overlayOpacity}
+        elements={weddingDetails.heroElements}
+        locale={lang}
         dict={dict.hero}
         design={cfg('hero').design}
       />

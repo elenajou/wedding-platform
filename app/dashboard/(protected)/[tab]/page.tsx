@@ -95,10 +95,27 @@ export default async function DashboardTabPage({ params }: Props) {
   } else if (tab === 'help') {
     content = <HelpTab />
   } else if (tab === 'theme') {
-    const [sectionRows, detailRows] = await Promise.all([
+    const [sectionRows, detailRows, heroElementRows] = await Promise.all([
       sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`,
       sql`SELECT * FROM wedding_details WHERE wedding_id = ${wid} LIMIT 1`,
+      sql`SELECT * FROM hero_elements WHERE wedding_id = ${wid} ORDER BY sort_order`,
     ])
+
+    if (heroElementRows.length === 0) {
+      const DEFAULTS = [
+        { sort_order: 10, element_type: 'eyebrow',   content: 'Junto a sus familias',              font_family: '', font_style: 'normal', font_weight: '400', visible: true },
+        { sort_order: 20, element_type: 'greeting',  content: 'Querido/a',                          font_family: '', font_style: 'italic', font_weight: '300', visible: true },
+        { sort_order: 30, element_type: 'names',     content: '',                                   font_family: '', font_style: 'italic', font_weight: '300', visible: true },
+        { sort_order: 40, element_type: 'tagline',   content: 'te invita a celebrar su matrimonio', font_family: '', font_style: 'normal', font_weight: '400', visible: true },
+        { sort_order: 50, element_type: 'date',      content: 'En nuestro día especial',            font_family: '', font_style: 'normal', font_weight: '400', visible: true },
+      ]
+      for (const d of DEFAULTS) {
+        await sql`INSERT INTO hero_elements (wedding_id, sort_order, element_type, content, locale_content, font_family, font_style, font_weight, visible) VALUES (${wid}, ${d.sort_order}, ${d.element_type}, ${d.content}, '{}'::jsonb, ${d.font_family}, ${d.font_style}, ${d.font_weight}, ${d.visible})`
+      }
+      const seeded = await sql`SELECT * FROM hero_elements WHERE wedding_id = ${wid} ORDER BY sort_order`
+      heroElementRows.push(...seeded)
+    }
+
     const activeSectionKeys = [
       'envelope', 'hero',
       ...(config.features.countdown ? ['countdown'] : []),
@@ -117,6 +134,7 @@ export default async function DashboardTabPage({ params }: Props) {
         activeSectionKeys={activeSectionKeys}
         weddingDetails={detailRows[0] as any ?? null}
         locale={locale}
+        initialHeroElements={heroElementRows as any[]}
       />
     )
   }

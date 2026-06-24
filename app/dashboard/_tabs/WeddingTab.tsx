@@ -89,30 +89,7 @@ export default function WeddingTab({ initialData, locales = ['en'], defaultLocal
           <div style={group}><label style={label}>{T('weddingCoordName')}</label><input style={field} value={f('coordinator_name')} onChange={e => set('coordinator_name', e.target.value)} /></div>
           <div style={group}><label style={label}>{T('weddingCoordEmail')}</label><input style={field} type="email" value={f('coordinator_email')} onChange={e => set('coordinator_email', e.target.value)} /></div>
         </div>
-      </div>
-
-      <div style={section}>
-        <p style={sectionTitle}>{T('weddingHeroSection')}</p>
         <div style={group}><label style={label}>{T('weddingNamesFontUrl')}</label><input style={field} value={f('names_font_url')} onChange={e => set('names_font_url', e.target.value)} placeholder={T('weddingNamesFontUrlPh')} /></div>
-
-        {/* Default locale card */}
-        <div style={localeCard}>
-          {extraLocales.length > 0 && <span style={localeTagStyle}>{LOCALE_NAMES[defaultLocale] ?? defaultLocale} ({defaultLocale})</span>}
-          <div style={group}><label style={label}>{T('weddingHeroEyebrow')}</label><input style={field} value={f('hero_eyebrow')} onChange={e => set('hero_eyebrow', e.target.value)} placeholder="ej. Save the Date" /></div>
-          <div style={group}><label style={label}>{T('weddingHeroTagline')}</label><input style={field} value={f('hero_tagline')} onChange={e => set('hero_tagline', e.target.value)} /></div>
-          <div style={group}><label style={label}>{T('weddingHeroGreeting')}</label><input style={field} value={f('hero_greeting')} onChange={e => set('hero_greeting', e.target.value)} /></div>
-          <div style={{ marginBottom: 0 }}><label style={label}>{T('weddingHeroBody')}</label><textarea style={{ ...field, resize: 'vertical', minHeight: 80 }} value={f('hero_body_text')} onChange={e => set('hero_body_text', e.target.value)} /></div>
-        </div>
-
-        {extraLocales.map(xl => (
-          <div key={xl} style={localeCard}>
-            <span style={localeTagStyle}>{LOCALE_NAMES[xl] ?? xl} ({xl})</span>
-            <div style={group}><label style={label}>{T('weddingHeroEyebrow')}</label><input style={field} value={lc(xl, 'hero_eyebrow')} onChange={e => setLocale(xl, 'hero_eyebrow', e.target.value)} /></div>
-            <div style={group}><label style={label}>{T('weddingHeroTagline')}</label><input style={field} value={lc(xl, 'hero_tagline')} onChange={e => setLocale(xl, 'hero_tagline', e.target.value)} /></div>
-            <div style={group}><label style={label}>{T('weddingHeroGreeting')}</label><input style={field} value={lc(xl, 'hero_greeting')} onChange={e => setLocale(xl, 'hero_greeting', e.target.value)} /></div>
-            <div style={{ marginBottom: 0 }}><label style={label}>{T('weddingHeroBody')}</label><textarea style={{ ...field, resize: 'vertical', minHeight: 80 }} value={lc(xl, 'hero_body_text')} onChange={e => setLocale(xl, 'hero_body_text', e.target.value)} /></div>
-          </div>
-        ))}
       </div>
 
       <div style={section}>

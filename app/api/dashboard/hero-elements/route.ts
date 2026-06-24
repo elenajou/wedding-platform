@@ -10,13 +10,13 @@ export async function GET() {
 
   try {
     const rows = await sql`
-      SELECT * FROM wedding_locations
+      SELECT * FROM hero_elements
       WHERE wedding_id = ${session.weddingId}
       ORDER BY sort_order
     `
     return NextResponse.json(rows)
   } catch (err) {
-    console.error('[dashboard/location GET]', err)
+    console.error('[dashboard/hero-elements GET]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -28,12 +28,20 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const rows = await sql`
-      INSERT INTO wedding_locations (wedding_id, sort_order, title, address, maps_link, waze_link, embed_url)
+      INSERT INTO hero_elements (wedding_id, sort_order, element_type, content, locale_content, font_family, font_style, font_weight, font_size, letter_spacing, font_color, visible)
       VALUES (
-        ${session.weddingId}, ${body.sort_order ?? 0},
-        ${body.title}, ${body.address ?? ''},
-        ${body.maps_link ?? ''}, ${body.waze_link ?? ''},
-        ${body.embed_url ?? ''}
+        ${session.weddingId},
+        ${body.sort_order ?? 0},
+        ${body.element_type},
+        ${body.content ?? ''},
+        ${JSON.stringify(body.locale_content ?? {})}::jsonb,
+        ${body.font_family ?? ''},
+        ${body.font_style ?? 'normal'},
+        ${body.font_weight ?? '400'},
+        ${body.font_size ?? ''},
+        ${body.letter_spacing ?? ''},
+        ${body.font_color ?? ''},
+        ${body.visible !== false}
       )
       RETURNING *
     `
@@ -41,7 +49,7 @@ export async function POST(req: NextRequest) {
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json(rows[0], { status: 201 })
   } catch (err) {
-    console.error('[dashboard/location POST]', err)
+    console.error('[dashboard/hero-elements POST]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

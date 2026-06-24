@@ -13,10 +13,6 @@ type Props = {
   design?: string
 }
 
-function mapsEmbedUrl(address: string) {
-  return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
-}
-
 export default function LocationSection({ locations, dict, design }: Props) {
   if (!locations.length) return null
 
@@ -34,12 +30,12 @@ export default function LocationSection({ locations, dict, design }: Props) {
           {locations.map((loc) => (
             <div key={loc.id} className={styles.card}>
               <p className={styles.cardTitle}>{loc.title}</p>
-              <p className={styles.cardAddress}>{loc.address}</p>
+              {loc.address && <p className={styles.cardAddress}>{loc.address}</p>}
 
-              {loc.address && (
+              {loc.embed_url && (
                 <div className={styles.mapWrap}>
                   <iframe
-                    src={mapsEmbedUrl(loc.address)}
+                    src={loc.embed_url}
                     className={styles.mapFrame}
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"

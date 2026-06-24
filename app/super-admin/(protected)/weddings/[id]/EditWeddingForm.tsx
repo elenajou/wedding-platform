@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { WeddingConfig } from '@/lib/tenant'
 import { SECTION_DESIGNS, type SectionKey } from '@/themes/section-designs'
 
@@ -8,17 +9,26 @@ type Props = { config: WeddingConfig }
 
 const SECTION_LABELS: Record<string, string> = {
   envelope: 'Envelope Gate', hero: 'Hero', countdown: 'Countdown', seating: 'Seating Card',
-  rsvp: 'RSVP Form', schedule: 'Day Schedule', video: 'Video', gallery: 'Gallery', faq: 'FAQ',
+  rsvp: 'RSVP Form', schedule: 'Day Schedule', video: 'Video', gallery: 'Gallery', faq: 'FAQ', location: 'Location',
 }
 
 export default function EditWeddingForm({ config }: Props) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const AVAILABLE_LOCALES: { code: string; label: string }[] = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'zh', label: '中文' },
+  ]
+
   const [form, setForm] = useState({
     domains: config.domains.join(', '),
     defaultLocale: config.defaultLocale,
-    locales: config.locales.join(', '),
+    locales: config.locales as string[],
+    dashboardLocale: config.dashboardLocale ?? 'es',
     dashboardPassword: '',
     featureRsvp: config.features.rsvp,
     featureCountdown: config.features.countdown,
@@ -60,6 +70,25 @@ export default function EditWeddingForm({ config }: Props) {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
+  function setDefaultLocale(code: string) {
+    setForm(prev => ({
+      ...prev,
+      defaultLocale: code,
+      locales: prev.locales.includes(code) ? prev.locales : [...prev.locales, code],
+    }))
+  }
+
+  function toggleLocale(code: string, checked: boolean) {
+    setForm(prev => {
+      const next = checked
+        ? [...prev.locales, code]
+        : prev.locales.filter(l => l !== code)
+      // Always keep defaultLocale in the list
+      if (!next.includes(prev.defaultLocale)) next.push(prev.defaultLocale)
+      return { ...prev, locales: next }
+    })
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -76,7 +105,7 @@ export default function EditWeddingForm({ config }: Props) {
       const body: Record<string, unknown> = {
         domains: form.domains.split(',').map(d => d.trim()).filter(Boolean),
         defaultLocale: form.defaultLocale,
-        locales: form.locales.split(',').map(l => l.trim()).filter(Boolean),
+        locales: form.locales.includes(form.defaultLocale) ? form.locales : [...form.locales, form.defaultLocale],
         features: {
           rsvp: form.featureRsvp,
           countdown: form.featureCountdown,
@@ -90,6 +119,7 @@ export default function EditWeddingForm({ config }: Props) {
           qrCode: form.featureQrCode,
         },
         enabledDesigns: enabledDesignsBody,
+        dashboardLocale: form.dashboardLocale,
       }
       if (form.dashboardPassword) body.dashboardPassword = form.dashboardPassword
 
@@ -98,10 +128,21 @@ export default function EditWeddingForm({ config }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
+      const data = await res.json()
       if (res.ok) {
-        window.location.href = '/super-admin'
+        // Sync locales back from DB so the checkboxes immediately reflect what was saved
+        const savedLocales: string[] = Array.isArray(data.locales)
+          ? data.locales
+          : typeof data.locales === 'string' && data.locales.startsWith('{')
+            ? data.locales.replace(/^{|}$/g, '').split(',').filter(Boolean)
+            : []
+        if (savedLocales.length > 0) {
+          setForm(prev => ({ ...prev, locales: savedLocales }))
+        }
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+        router.refresh()
       } else {
-        const data = await res.json()
         setError(data.error ?? 'Failed to save')
       }
     } catch {
@@ -154,12 +195,44 @@ export default function EditWeddingForm({ config }: Props) {
 
       <div style={{ marginBottom: '1.5rem' }}>
         <label style={labelStyle}>Default Locale</label>
-        <input type="text" value={form.defaultLocale} onChange={e => set('defaultLocale', e.target.value)} required style={fieldStyle} />
+        <select value={form.defaultLocale} onChange={e => setDefaultLocale(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+          {AVAILABLE_LOCALES.map(({ code, label }) => (
+            <option key={code} value={code}>{label} ({code})</option>
+          ))}
+        </select>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <label style={labelStyle}>Supported Locales (comma-separated)</label>
-        <input type="text" value={form.locales} onChange={e => set('locales', e.target.value)} required style={fieldStyle} />
+        <p style={labelStyle}>Supported Locales</p>
+        <div style={{ display: 'flex', gap: '1.5rem', marginTop: 8, marginBottom: 6 }}>
+          {AVAILABLE_LOCALES.map(({ code, label }) => {
+            const isDefault = code === form.defaultLocale
+            const isChecked = form.locales.includes(code)
+            return (
+              <label key={code} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: isDefault ? 'default' : 'pointer', opacity: isDefault ? 0.45 : 1 }}>
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  disabled={isDefault}
+                  onChange={e => toggleLocale(code, e.target.checked)}
+                  style={{ accentColor: '#b08d57' }}
+                />
+                <span style={{ fontSize: 14, color: '#c4b89a' }}>{label} <span style={{ fontSize: 11, color: '#6b6046' }}>({code})</span></span>
+              </label>
+            )
+          })}
+        </div>
+        <p style={{ fontSize: 11, color: '#6b6046', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>
+          The default locale is always required. Change "Default Locale" above first if you want to uncheck it.
+        </p>
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <label style={labelStyle}>Dashboard Language</label>
+        <select value={form.dashboardLocale} onChange={e => set('dashboardLocale', e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+          <option value="es">Español</option>
+          <option value="en">English</option>
+        </select>
       </div>
 
       <div style={{ marginBottom: '2rem' }}>
@@ -214,14 +287,15 @@ export default function EditWeddingForm({ config }: Props) {
       </div>
 
       {error && <p style={{ fontSize: 14, fontStyle: 'italic', color: '#c4614a', marginBottom: '1rem' }}>{error}</p>}
+      {saved && <p style={{ fontSize: 14, fontStyle: 'italic', color: '#6b9a6e', marginBottom: '1rem' }}>Changes saved.</p>}
 
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         <button
           type="submit"
           disabled={loading}
-          style={{ flex: 1, padding: 13, background: '#b08d57', color: '#1e1a16', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1 }}
+          style={{ flex: 1, padding: 13, background: saved ? '#4a7a4e' : '#b08d57', color: '#1e1a16', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1, transition: 'background 0.3s' }}
         >
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
         </button>
 
         <button

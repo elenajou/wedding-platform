@@ -2,7 +2,8 @@ import { notFound } from 'next/navigation'
 import { getDashboardSession } from '@/lib/auth'
 import { getWeddingConfigById } from '@/lib/tenant'
 import { sql } from '@/lib/db'
-import SignOutButton from '@/app/dashboard/_SignOutButton'
+import { dt } from '@/lib/dashboard-i18n'
+import DashboardNav from '@/app/dashboard/_DashboardNav'
 import WeddingTab from '@/app/dashboard/_tabs/WeddingTab'
 import TablesTab from '@/app/dashboard/_tabs/TablesTab'
 import GroupsTab from '@/app/dashboard/_tabs/GroupsTab'
@@ -12,37 +13,12 @@ import ScheduleTab from '@/app/dashboard/_tabs/ScheduleTab'
 import FaqTab from '@/app/dashboard/_tabs/FaqTab'
 import PhotosTab from '@/app/dashboard/_tabs/PhotosTab'
 import ThemeTab from '@/app/dashboard/_tabs/ThemeTab'
-import SectionsTab from '@/app/dashboard/_tabs/SectionsTab'
 import HelpTab from '@/app/dashboard/_tabs/HelpTab'
+import LocationTab from '@/app/dashboard/_tabs/LocationTab'
 
 type Props = { params: Promise<{ tab: string }> }
 
-const BASE_TABS = ['wedding', 'tables', 'groups', 'guests', 'sections', 'theme', 'help']
-
-const TAB_LABELS: Record<string, string> = {
-  wedding: 'Boda',
-  tables: 'Mesas',
-  groups: 'Grupos',
-  guests: 'Invitados',
-  sections: 'Secciones',
-  theme: 'Tema',
-  rsvps: 'Confirmaciones',
-  schedule: 'Agenda',
-  faq: 'FAQ',
-  photos: 'Fotos',
-  video: 'Video',
-  help: 'Ayuda',
-}
-
-const nav: React.CSSProperties = {
-  borderBottom: '0.5px solid #e0d8c8',
-  padding: '0.75rem 2rem',
-  display: 'flex',
-  gap: '1.5rem',
-  overflowX: 'auto',
-  alignItems: 'center',
-  background: '#fff',
-}
+const BASE_TABS = ['wedding', 'tables', 'groups', 'guests']
 
 export default async function DashboardTabPage({ params }: Props) {
   const { tab } = await params
@@ -53,6 +29,22 @@ export default async function DashboardTabPage({ params }: Props) {
   if (!config) notFound()
 
   const wid = session.weddingId
+  const locale = config.dashboardLocale ?? 'es'
+
+  const TAB_LABELS: Record<string, string> = {
+    wedding:  dt('tabWedding', locale),
+    tables:   dt('tabTables', locale),
+    groups:   dt('tabGroups', locale),
+    guests:   dt('tabGuests', locale),
+    theme:    dt('tabTheme', locale),
+    rsvps:    dt('tabRsvps', locale),
+    schedule: dt('tabSchedule', locale),
+    faq:      dt('tabFaq', locale),
+    photos:   dt('tabPhotos', locale),
+    video:    dt('tabVideo', locale),
+    help:     dt('tabHelp', locale),
+    location: dt('tabLocation', locale),
+  }
 
   const allowedTabs = [
     ...BASE_TABS,
@@ -61,53 +53,45 @@ export default async function DashboardTabPage({ params }: Props) {
     ...(config.features.faq ? ['faq'] : []),
     ...(config.features.gallery ? ['photos'] : []),
     ...(config.features.videoSection ? ['video'] : []),
+    ...(config.features.maps ? ['location'] : []),
+    'theme',
+    'help',
   ]
 
   if (!allowedTabs.includes(tab)) notFound()
 
-  // Fetch initial data server-side so the page arrives pre-populated
   let content: React.ReactNode = null
 
   if (tab === 'wedding') {
     const rows = await sql`SELECT * FROM wedding_details WHERE wedding_id = ${wid} LIMIT 1`
-    content = <WeddingTab initialData={rows[0] ?? null} locales={config.locales} />
+    content = <WeddingTab initialData={rows[0] ?? null} locales={config.locales} defaultLocale={config.defaultLocale} locale={locale} />
   } else if (tab === 'tables') {
     const rows = await sql`SELECT * FROM wedding_tables WHERE wedding_id = ${wid} ORDER BY created_at`
-    content = <TablesTab initialItems={rows as any[]} />
+    content = <TablesTab initialItems={rows as any[]} locale={locale} />
   } else if (tab === 'groups') {
     const rows = await sql`SELECT * FROM invitation_groups WHERE wedding_id = ${wid} ORDER BY created_at`
-    content = <GroupsTab initialItems={rows as any[]} />
+    content = <GroupsTab initialItems={rows as any[]} locale={locale} />
   } else if (tab === 'guests') {
     const [guestRows, groupRows] = await Promise.all([
       sql`SELECT g.*, ig.name AS group_name FROM guests g LEFT JOIN invitation_groups ig ON ig.id = g.group_id WHERE g.wedding_id = ${wid} ORDER BY g.created_at`,
       sql`SELECT id, name FROM invitation_groups WHERE wedding_id = ${wid} ORDER BY name`,
     ])
-    content = <GuestsTab initialItems={guestRows as any[]} groups={groupRows as any[]} />
+    content = <GuestsTab initialItems={guestRows as any[]} groups={groupRows as any[]} locale={locale} />
   } else if (tab === 'rsvps') {
     const rows = await sql`SELECT r.*, ig.name AS group_name, ig.allocated_seats FROM rsvps r LEFT JOIN invitation_groups ig ON ig.id = r.group_id WHERE r.wedding_id = ${wid} ORDER BY r.created_at DESC`
-    content = <RsvpsTab initialItems={rows as any[]} />
+    content = <RsvpsTab initialItems={rows as any[]} locale={locale} />
   } else if (tab === 'schedule') {
     const rows = await sql`SELECT * FROM wedding_schedule WHERE wedding_id = ${wid} ORDER BY sort_order`
-    content = <ScheduleTab initialItems={rows as any[]} />
+    content = <ScheduleTab initialItems={rows as any[]} locales={config.locales} defaultLocale={config.defaultLocale} locale={locale} />
   } else if (tab === 'faq') {
     const rows = await sql`SELECT * FROM wedding_faq WHERE wedding_id = ${wid} ORDER BY sort_order`
-    content = <FaqTab initialItems={rows as any[]} />
+    content = <FaqTab initialItems={rows as any[]} locales={config.locales} defaultLocale={config.defaultLocale} locale={locale} />
   } else if (tab === 'photos') {
     const rows = await sql`SELECT * FROM wedding_photos WHERE wedding_id = ${wid} ORDER BY sort_order`
-    content = <PhotosTab initialItems={rows as any[]} />
-  } else if (tab === 'sections') {
-    const rows = await sql`SELECT * FROM section_config WHERE wedding_id = ${wid} ORDER BY sort_order`
-    const activeSectionKeys = [
-      'envelope', 'hero',
-      ...(config.features.countdown ? ['countdown'] : []),
-      ...(config.features.seatingCard ? ['seating'] : []),
-      ...(config.features.rsvp ? ['rsvp'] : []),
-      ...(config.features.schedule ? ['schedule'] : []),
-      ...(config.features.videoSection ? ['video'] : []),
-      ...(config.features.gallery ? ['gallery'] : []),
-      ...(config.features.faq ? ['faq'] : []),
-    ]
-    content = <SectionsTab initialSections={rows as any[]} activeSectionKeys={activeSectionKeys} />
+    content = <PhotosTab initialItems={rows as any[]} locale={locale} />
+  } else if (tab === 'location') {
+    const rows = await sql`SELECT * FROM wedding_locations WHERE wedding_id = ${wid} ORDER BY sort_order`
+    content = <LocationTab initialItems={rows as any[]} locale={locale} />
   } else if (tab === 'help') {
     content = <HelpTab />
   } else if (tab === 'theme') {
@@ -124,6 +108,7 @@ export default async function DashboardTabPage({ params }: Props) {
       ...(config.features.videoSection ? ['video'] : []),
       ...(config.features.gallery ? ['gallery'] : []),
       ...(config.features.faq ? ['faq'] : []),
+      ...(config.features.maps ? ['location'] : []),
     ]
     content = (
       <ThemeTab
@@ -131,26 +116,14 @@ export default async function DashboardTabPage({ params }: Props) {
         enabledDesigns={config.enabledDesigns}
         activeSectionKeys={activeSectionKeys}
         weddingDetails={detailRows[0] as any ?? null}
+        locale={locale}
       />
     )
   }
 
   return (
     <main style={{ minHeight: '100svh', background: '#faf7f2', fontFamily: "'EB Garamond', serif" }}>
-      <nav style={nav}>
-        {allowedTabs.map(t => (
-          <a key={t} href={`/dashboard/${t}`} style={{
-            fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
-            color: t === tab ? '#201d19' : '#7a6e5f', textDecoration: 'none',
-            borderBottom: t === tab ? '1px solid #201d19' : 'none',
-            paddingBottom: 2, whiteSpace: 'nowrap',
-          }}>
-            {TAB_LABELS[t] ?? t}
-          </a>
-        ))}
-        <span style={{ flex: 1 }} />
-        <SignOutButton />
-      </nav>
+      <DashboardNav tabs={allowedTabs} currentTab={tab} labels={TAB_LABELS} />
       <div style={{ padding: '2rem', maxWidth: 860, margin: '0 auto' }}>
         {content}
       </div>

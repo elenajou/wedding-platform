@@ -11,17 +11,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const body = await req.json()
-    const { domains, defaultLocale, locales, dashboardPassword, features, enabledDesigns } = body
+    const { domains, defaultLocale, locales, dashboardPassword, features, enabledDesigns, dashboardLocale } = body
 
     const passwordHash = dashboardPassword ? await bcrypt.hash(dashboardPassword, 10) : null
     const enabledDesignsJson = JSON.stringify(enabledDesigns ?? {})
+    const domainsJson = JSON.stringify(domains ?? [])
+    const localesJson = JSON.stringify(locales ?? ['en'])
 
     const rows = passwordHash
       ? await sql`
           UPDATE weddings SET
-            domains                = ${domains ?? []}::text[],
+            domains                = ARRAY(SELECT jsonb_array_elements_text(${domainsJson}::jsonb)),
             default_locale         = ${defaultLocale},
-            locales                = ${locales ?? ['en']}::text[],
+            locales                = ARRAY(SELECT jsonb_array_elements_text(${localesJson}::jsonb)),
+            dashboard_locale       = ${dashboardLocale ?? 'es'},
             dashboard_password_hash = ${passwordHash},
             feature_rsvp           = ${features?.rsvp},
             feature_countdown      = ${features?.countdown},
@@ -39,9 +42,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         `
       : await sql`
           UPDATE weddings SET
-            domains                = ${domains ?? []}::text[],
+            domains                = ARRAY(SELECT jsonb_array_elements_text(${domainsJson}::jsonb)),
             default_locale         = ${defaultLocale},
-            locales                = ${locales ?? ['en']}::text[],
+            locales                = ARRAY(SELECT jsonb_array_elements_text(${localesJson}::jsonb)),
+            dashboard_locale       = ${dashboardLocale ?? 'es'},
             feature_rsvp           = ${features?.rsvp},
             feature_countdown      = ${features?.countdown},
             feature_gallery        = ${features?.gallery},

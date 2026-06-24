@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const rows = await sql`
-      INSERT INTO wedding_faq (wedding_id, sort_order, question, answer)
-      VALUES (${session.weddingId}, ${body.sort_order ?? 0}, ${body.question}, ${body.answer})
+      INSERT INTO wedding_faq (wedding_id, sort_order, question, answer, locale_content)
+      VALUES (${session.weddingId}, ${body.sort_order ?? 0}, ${body.question}, ${body.answer}, ${JSON.stringify(body.locale_content ?? {})})
       RETURNING *
     `
     const config = await getWeddingConfigById(session.weddingId)

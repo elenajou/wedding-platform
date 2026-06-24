@@ -116,6 +116,25 @@ export async function getSectionConfig(weddingId: string): Promise<SectionConfig
   return map
 }
 
+export type LocationItem = {
+  id: string
+  sort_order: number
+  title: string
+  address: string
+  maps_link: string
+  waze_link: string
+}
+
+export async function getWeddingLocations(weddingId: string): Promise<LocationItem[]> {
+  const rows = await sql`
+    SELECT id, sort_order, title, address, maps_link, waze_link
+    FROM wedding_locations
+    WHERE wedding_id = ${weddingId}
+    ORDER BY sort_order
+  `
+  return rows as LocationItem[]
+}
+
 export async function getWeddingPhotos(weddingId: string): Promise<PhotoItem[]> {
   const rows = await sql`
     SELECT src, alt, caption

@@ -10,13 +10,13 @@ export async function GET() {
 
   try {
     const rows = await sql`
-      SELECT * FROM wedding_schedule
+      SELECT * FROM wedding_locations
       WHERE wedding_id = ${session.weddingId}
       ORDER BY sort_order
     `
     return NextResponse.json(rows)
   } catch (err) {
-    console.error('[dashboard/schedule GET]', err)
+    console.error('[dashboard/location GET]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -28,12 +28,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const rows = await sql`
-      INSERT INTO wedding_schedule (wedding_id, sort_order, time_label, iso_time, event_name, description, locale_content)
+      INSERT INTO wedding_locations (wedding_id, sort_order, title, address, maps_link, waze_link)
       VALUES (
         ${session.weddingId}, ${body.sort_order ?? 0},
-        ${body.time_label}, ${body.iso_time},
-        ${body.event_name}, ${body.description ?? null},
-        ${JSON.stringify(body.locale_content ?? {})}::jsonb
+        ${body.title}, ${body.address ?? ''},
+        ${body.maps_link ?? ''}, ${body.waze_link ?? ''}
       )
       RETURNING *
     `
@@ -41,7 +40,7 @@ export async function POST(req: NextRequest) {
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json(rows[0], { status: 201 })
   } catch (err) {
-    console.error('[dashboard/schedule POST]', err)
+    console.error('[dashboard/location POST]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

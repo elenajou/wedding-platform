@@ -108,6 +108,11 @@
     "items": [],
     "close": "Close invitation"
   },
+  "location": {
+    "sectionLabel": "Location",
+    "openInGoogleMaps": "Open in Google Maps",
+    "openInWaze": "Open in Waze"
+  },
   "languageSwitcher": {
     "label": "Language"
   }

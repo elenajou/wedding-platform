@@ -13,6 +13,7 @@ import DaySchedule from '@/components/DaySchedule'
 import VideoSection from '@/components/VideoSection'
 import PhotoGallery from '@/components/PhotoGallery'
 import FAQAccordion from '@/components/FAQAccordion'
+import LocationSection from '@/components/LocationSection'
 import FadeIn from '@/components/FadeIn'
 
 // Re-export WeddingFeatures so the type is available via this module
@@ -151,6 +152,15 @@ export default function InvitationClient({ dict, lang, weddingDetails, features 
           lang={lang}
           dict={dict.faq}
           design={cfg('faq').design}
+        />
+      ),
+    }),
+    ...(features.maps && weddingDetails.locations.length > 0 && {
+      location: (
+        <LocationSection
+          locations={weddingDetails.locations}
+          dict={dict.location}
+          design={cfg('location').design}
         />
       ),
     }),

@@ -22,6 +22,8 @@ CREATE TABLE weddings (
   feature_seating_card      boolean NOT NULL DEFAULT true,
   -- Per-section enabled design keys; empty {} means all designs are allowed
   enabled_designs           jsonb NOT NULL DEFAULT '{}',
+  -- Dashboard UI language
+  dashboard_locale          text NOT NULL DEFAULT 'es',
   -- Auth
   dashboard_password_hash   text NOT NULL DEFAULT '',
   -- Soft delete / suspend
@@ -89,12 +91,13 @@ CREATE TABLE wedding_schedule (
 );
 
 CREATE TABLE wedding_faq (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  wedding_id  uuid NOT NULL REFERENCES weddings(id) ON DELETE CASCADE,
-  sort_order  integer NOT NULL DEFAULT 0,
-  question    text NOT NULL DEFAULT '',
-  answer      text NOT NULL DEFAULT '',
-  created_at  timestamptz NOT NULL DEFAULT now()
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id     uuid NOT NULL REFERENCES weddings(id) ON DELETE CASCADE,
+  sort_order     integer NOT NULL DEFAULT 0,
+  question       text NOT NULL DEFAULT '',
+  answer         text NOT NULL DEFAULT '',
+  locale_content jsonb NOT NULL DEFAULT '{}',
+  created_at     timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE wedding_photos (
@@ -162,6 +165,19 @@ CREATE INDEX idx_invitation_groups_passcode ON invitation_groups (passcode) WHER
 CREATE INDEX idx_rsvps_wedding_id ON rsvps (wedding_id);
 CREATE INDEX idx_rsvps_group_id ON rsvps (group_id);
 CREATE INDEX idx_section_config_wedding_id ON section_config (wedding_id);
+
+-- ── Location pins ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wedding_locations (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id  uuid NOT NULL REFERENCES weddings(id) ON DELETE CASCADE,
+  sort_order  integer NOT NULL DEFAULT 0,
+  title       text NOT NULL DEFAULT '',
+  address     text NOT NULL DEFAULT '',
+  maps_link   text NOT NULL DEFAULT '',
+  waze_link   text NOT NULL DEFAULT '',
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_wedding_locations_wedding_id ON wedding_locations (wedding_id);
 
 -- ── Seed: example wedding (replace values before running) ─────────────────
 

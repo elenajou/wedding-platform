@@ -6,11 +6,17 @@ export default function NewWeddingPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const AVAILABLE_LOCALES = [
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'zh', label: '中文' },
+  ]
+
   const [form, setForm] = useState({
     slug: '',
     domains: '',
     defaultLocale: 'en',
-    locales: 'en',
+    locales: ['en'] as string[],
     dashboardPassword: '',
     featureRsvp: true,
     featureCountdown: true,
@@ -28,6 +34,24 @@ export default function NewWeddingPage() {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
+  function setDefaultLocale(code: string) {
+    setForm(prev => ({
+      ...prev,
+      defaultLocale: code,
+      locales: prev.locales.includes(code) ? prev.locales : [...prev.locales, code],
+    }))
+  }
+
+  function toggleLocale(code: string, checked: boolean) {
+    setForm(prev => {
+      const next = checked
+        ? [...prev.locales, code]
+        : prev.locales.filter(l => l !== code)
+      if (!next.includes(prev.defaultLocale)) next.push(prev.defaultLocale)
+      return { ...prev, locales: next }
+    })
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -40,7 +64,7 @@ export default function NewWeddingPage() {
           slug: form.slug.trim().toLowerCase(),
           domains: form.domains.split(',').map(d => d.trim()).filter(Boolean),
           defaultLocale: form.defaultLocale,
-          locales: form.locales.split(',').map(l => l.trim()).filter(Boolean),
+          locales: form.locales.includes(form.defaultLocale) ? form.locales : [...form.locales, form.defaultLocale],
           dashboardPassword: form.dashboardPassword,
           features: {
             rsvp: form.featureRsvp,
@@ -109,12 +133,33 @@ export default function NewWeddingPage() {
 
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={labelStyle}>Default Locale</label>
-            <input type="text" value={form.defaultLocale} onChange={e => set('defaultLocale', e.target.value)} placeholder="en" required style={fieldStyle} />
+            <select value={form.defaultLocale} onChange={e => setDefaultLocale(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+              {AVAILABLE_LOCALES.map(({ code, label }) => (
+                <option key={code} value={code}>{label} ({code})</option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={labelStyle}>Supported Locales (comma-separated)</label>
-            <input type="text" value={form.locales} onChange={e => set('locales', e.target.value)} placeholder="en,es" required style={fieldStyle} />
+            <p style={labelStyle}>Supported Locales</p>
+            <div style={{ display: 'flex', gap: '1.5rem', marginTop: 8 }}>
+              {AVAILABLE_LOCALES.map(({ code, label }) => {
+                const isDefault = code === form.defaultLocale
+                const isChecked = form.locales.includes(code)
+                return (
+                  <label key={code} style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: isDefault ? 'default' : 'pointer', opacity: isDefault ? 0.5 : 1 }} title={isDefault ? 'Default locale — always included' : undefined}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      disabled={isDefault}
+                      onChange={e => toggleLocale(code, e.target.checked)}
+                      style={{ accentColor: '#b08d57' }}
+                    />
+                    <span style={{ fontSize: 14, color: '#c4b89a' }}>{label} <span style={{ fontSize: 11, color: '#6b6046' }}>({code})</span></span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
 
           <div style={{ marginBottom: '2rem' }}>

@@ -12,11 +12,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params
     const body = await req.json()
     const rows = await sql`
-      UPDATE wedding_faq
-      SET sort_order     = ${body.sort_order},
-          question       = ${body.question},
-          answer         = ${body.answer},
-          locale_content = ${JSON.stringify(body.locale_content ?? {})}
+      UPDATE wedding_locations
+      SET sort_order = ${body.sort_order},
+          title      = ${body.title},
+          address    = ${body.address ?? ''},
+          maps_link  = ${body.maps_link ?? ''},
+          waze_link  = ${body.waze_link ?? ''}
       WHERE id = ${id} AND wedding_id = ${session.weddingId}
       RETURNING *
     `
@@ -25,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json(rows[0])
   } catch (err) {
-    console.error('[dashboard/faq/[id] PUT]', err)
+    console.error('[dashboard/location/[id] PUT]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -36,12 +37,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   try {
     const { id } = await params
-    await sql`DELETE FROM wedding_faq WHERE id = ${id} AND wedding_id = ${session.weddingId}`
+    await sql`DELETE FROM wedding_locations WHERE id = ${id} AND wedding_id = ${session.weddingId}`
     const config = await getWeddingConfigById(session.weddingId)
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('[dashboard/faq/[id] DELETE]', err)
+    console.error('[dashboard/location/[id] DELETE]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

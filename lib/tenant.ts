@@ -22,6 +22,7 @@ export type WeddingConfig = {
   features: WeddingFeatures
   // per-section enabled design keys; empty object means all designs are enabled
   enabledDesigns: Record<string, string[]>
+  dashboardLocale: string
 }
 
 type DbWedding = {
@@ -41,15 +42,23 @@ type DbWedding = {
   feature_faq: boolean
   feature_seating_card: boolean
   enabled_designs: Record<string, string[]> | null
+  dashboard_locale: string
+}
+
+function parseArr(val: unknown, fallback: string[]): string[] {
+  if (Array.isArray(val)) return val as string[]
+  if (typeof val === 'string' && val.startsWith('{'))
+    return val.replace(/^{|}$/g, '').split(',').filter(Boolean)
+  return fallback
 }
 
 function dbToConfig(row: DbWedding): WeddingConfig {
   return {
     id: row.id,
     slug: row.slug,
-    domains: row.domains ?? [],
+    domains: parseArr(row.domains, []),
     defaultLocale: row.default_locale,
-    locales: row.locales ?? [row.default_locale],
+    locales: parseArr(row.locales, [row.default_locale]),
     features: {
       rsvp: row.feature_rsvp,
       countdown: row.feature_countdown,
@@ -63,39 +72,29 @@ function dbToConfig(row: DbWedding): WeddingConfig {
       seatingCard: row.feature_seating_card,
     },
     enabledDesigns: row.enabled_designs ?? {},
+    dashboardLocale: row.dashboard_locale ?? 'es',
   }
 }
 
-let _cache: WeddingConfig[] | null = null
-let _cacheExpiry = 0
-const CACHE_TTL_MS = 5 * 60 * 1000
-
 async function loadConfigs(): Promise<WeddingConfig[]> {
-  const now = Date.now()
-  if (_cache && now < _cacheExpiry) return _cache
-
   try {
     const rows = await sql`
       SELECT id, slug, domains, default_locale, locales,
              feature_rsvp, feature_countdown, feature_gallery, feature_guestbook,
              feature_maps, feature_qr_code, feature_video_section, feature_schedule,
-             feature_faq, feature_seating_card, enabled_designs
+             feature_faq, feature_seating_card, enabled_designs, dashboard_locale
       FROM weddings
       WHERE active = true
     `
-    _cache = (rows as unknown as DbWedding[]).map(dbToConfig)
-    _cacheExpiry = now + CACHE_TTL_MS
-    return _cache
+    return (rows as unknown as DbWedding[]).map(dbToConfig)
   } catch (err) {
     console.error('[tenant] failed to load configs:', err)
-    return _cache ?? []
+    return []
   }
 }
 
-export function invalidateTenantCache(): void {
-  _cache = null
-  _cacheExpiry = 0
-}
+// No-op kept so API route callers don't need updating
+export function invalidateTenantCache(): void {}
 
 export async function resolveConfigByHost(host: string): Promise<WeddingConfig | null> {
   const cleanHost = host.split(':')[0].toLowerCase()

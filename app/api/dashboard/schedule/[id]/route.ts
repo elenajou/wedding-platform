@@ -13,11 +13,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json()
     const rows = await sql`
       UPDATE wedding_schedule
-      SET sort_order  = ${body.sort_order},
-          time_label  = ${body.time_label},
-          iso_time    = ${body.iso_time},
-          event_name  = ${body.event_name},
-          description = ${body.description ?? null}
+      SET sort_order     = ${body.sort_order},
+          time_label     = ${body.time_label},
+          iso_time       = ${body.iso_time},
+          event_name     = ${body.event_name},
+          description    = ${body.description ?? null},
+          locale_content = ${JSON.stringify(body.locale_content ?? {})}::jsonb
       WHERE id = ${id} AND wedding_id = ${session.weddingId}
       RETURNING *
     `

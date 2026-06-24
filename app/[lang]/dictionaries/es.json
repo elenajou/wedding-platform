@@ -108,6 +108,11 @@
     "items": [],
     "close": "Cerrar invitación"
   },
+  "location": {
+    "sectionLabel": "Ubicación",
+    "openInGoogleMaps": "Abrir en Google Maps",
+    "openInWaze": "Abrir en Waze"
+  },
   "languageSwitcher": {
     "label": "Idioma"
   }

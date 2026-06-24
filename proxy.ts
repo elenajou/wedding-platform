@@ -45,19 +45,27 @@ export async function proxy(request: NextRequest) {
   const supportedLocales = config?.locales ?? Array.from(GLOBAL_LOCALES)
   const defaultLocale = config?.defaultLocale ?? DEFAULT_LOCALE
 
-  const pathnameHasLocale = supportedLocales.some(
+  // Check against all globally-known locales, not just supported ones.
+  // This handles the case where a path like /en/... exists but 'en' is no longer
+  // a supported locale — without this, the middleware would prepend another locale
+  // and produce /es/en/... (a 404) instead of /es/...
+  const allLocales = Array.from(GLOBAL_LOCALES)
+  const pathnameLocale = allLocales.find(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   )
+  const pathWithoutLocale = pathnameLocale
+    ? pathname.slice(`/${pathnameLocale}`.length) || '/'
+    : pathname
 
-  if (pathnameHasLocale) {
-    const lang = pathname.split('/')[1]
-    requestHeaders.set('x-lang', lang)
+  if (pathnameLocale && supportedLocales.includes(pathnameLocale)) {
+    requestHeaders.set('x-lang', pathnameLocale)
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
+  // Either no locale prefix, or locale prefix is no longer supported → redirect
   const locale = getLocale(request, supportedLocales, defaultLocale)
   const url = request.nextUrl.clone()
-  url.pathname = `/${locale}${pathname}`
+  url.pathname = `/${locale}${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
   return NextResponse.redirect(url)
 }
 

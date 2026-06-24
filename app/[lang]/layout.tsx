@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getWeddingConfigById } from '@/lib/tenant'
 import { getDictionaryWithData, hasLocale } from './dictionaries'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -37,6 +37,11 @@ export default async function LangLayout({
   const weddingId = h.get('x-wedding-id')
   const config = weddingId ? await getWeddingConfigById(weddingId) : null
   const availableLocales = config?.locales ?? ['en', 'es', 'zh']
+
+  // If this wedding doesn't support the requested locale, redirect to its default
+  if (config && !config.locales.includes(lang)) {
+    redirect(`/${config.defaultLocale}`)
+  }
 
   return (
     <>

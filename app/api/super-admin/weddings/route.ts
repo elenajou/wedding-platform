@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     const { slug, domains, defaultLocale, locales, dashboardPassword, features } = body
 
     const passwordHash = dashboardPassword ? await bcrypt.hash(dashboardPassword, 10) : ''
+    const domainsJson = JSON.stringify(domains ?? [])
+    const localesJson = JSON.stringify(locales ?? ['en'])
 
     const rows = await sql`
       INSERT INTO weddings (
@@ -30,9 +32,9 @@ export async function POST(req: NextRequest) {
         feature_schedule, feature_faq, feature_seating_card
       ) VALUES (
         ${slug},
-        ${domains ?? []}::text[],
+        ARRAY(SELECT jsonb_array_elements_text(${domainsJson}::jsonb)),
         ${defaultLocale ?? 'en'},
-        ${locales ?? ['en']}::text[],
+        ARRAY(SELECT jsonb_array_elements_text(${localesJson}::jsonb)),
         ${passwordHash},
         true,
         ${features?.rsvp ?? true},

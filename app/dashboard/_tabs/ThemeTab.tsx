@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { dt } from '@/lib/dashboard-i18n'
 import { SECTION_DESIGNS, type SectionKey } from '@/themes/section-designs'
 import { getAllColorSchemes, getColorScheme } from '@/themes/color-schemes'
 import TemplatePreview from './_TemplatePreview'
@@ -27,6 +28,7 @@ type SectionRow = {
   font_color: string | null
   overlay_opacity: number
   sort_order: number
+  visible: boolean
 }
 
 type Props = {
@@ -34,6 +36,7 @@ type Props = {
   enabledDesigns: Record<string, string[]>
   activeSectionKeys: string[]
   weddingDetails?: Record<string, unknown> | null
+  locale?: string
 }
 
 // ── Preview dimensions (iPhone 14 Pro Max logical pixels) ────────────────────
@@ -332,14 +335,22 @@ function renderPreviewSection(key: string, section: SectionRow, wd: Record<strin
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ThemeTab({ initialSections, enabledDesigns, activeSectionKeys, weddingDetails }: Props) {
+export default function ThemeTab({ initialSections, enabledDesigns, activeSectionKeys, weddingDetails, locale }: Props) {
+  const T = (k: string) => dt(k, locale)
+
   const [sections, setSections] = useState<SectionRow[]>(() => {
     const existing = Object.fromEntries(initialSections.map(s => [s.section_key, s]))
-    return activeSectionKeys.map(key => existing[key] ?? {
-      id: null, section_key: key, design: 'Classic', color_scheme: 'Gold',
-      background_url: null, background_color: null, font_color: null,
-      overlay_opacity: 0.32, sort_order: 99,
-    })
+    return activeSectionKeys
+      .map(key => existing[key] ?? {
+        id: null, section_key: key, design: 'Classic', color_scheme: 'Gold',
+        background_url: null, background_color: null, font_color: null,
+        overlay_opacity: 0.32, sort_order: 99, visible: true,
+      })
+      .sort((a, b) => {
+        if (a.section_key === 'envelope') return -1
+        if (b.section_key === 'envelope') return 1
+        return a.sort_order - b.sort_order
+      })
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -387,6 +398,25 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
     setSaved(false)
   }
 
+  function moveSection(key: string, dir: -1 | 1) {
+    if (key === 'envelope') return
+    setSections(prev => {
+      const idx = prev.findIndex(s => s.section_key === key)
+      const next = idx + dir
+      if (next < 0 || next >= prev.length) return prev
+      if (prev[next].section_key === 'envelope') return prev
+      const arr = [...prev]
+      ;[arr[idx], arr[next]] = [arr[next], arr[idx]]
+      return arr.map((s, i) => ({ ...s, sort_order: i * 10 }))
+    })
+    setSaved(false)
+  }
+
+  function toggleVisible(key: string) {
+    setSections(prev => prev.map(s => s.section_key === key ? { ...s, visible: !s.visible } : s))
+    setSaved(false)
+  }
+
   async function handleSave() {
     setSaving(true); setError(''); setSaved(false)
     try {
@@ -403,6 +433,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
           font_color: s.font_color || null,
           overlay_opacity: s.overlay_opacity,
           sort_order: s.sort_order,
+          visible: s.visible !== false,
         }))),
       })
       if (res.ok) {
@@ -421,17 +452,17 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19' }}>
-          Tema y Plantillas
+          {T('themeTitle')}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          {saved && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>Guardado</span>}
+          {saved && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{T('savedShort')}</span>}
           {error && <span style={{ fontSize: 12, color: '#c4614a', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{error}</span>}
           <button
             onClick={handleSave}
             disabled={saving}
             style={{ padding: '7px 18px', background: '#b08d57', color: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: saving ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: saving ? 0.6 : 1 }}
           >
-            {saving ? 'Guardando…' : 'Guardar'}
+            {saving ? T('saving') : T('save')}
           </button>
         </div>
       </div>
@@ -442,11 +473,11 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
         {/* ── Left: controls ── */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#7a6e5f', fontStyle: 'italic', marginBottom: '1.5rem' }}>
-            Elige plantilla y paleta para cada sección. Personaliza fondos, superposición y color de texto.
+            {T('themeDescription')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {sections.map(section => {
+            {sections.map((section, idx) => {
               const key = section.section_key
               const allDesigns = SECTION_DESIGNS[key as SectionKey] ?? []
               const allowed = enabledDesigns[key]
@@ -455,32 +486,79 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
               const isOpen = openSection === key
               const scheme = getColorScheme(section.color_scheme)
               const hasCustomBg = !!(section.background_url || section.background_color)
+              const isVisible = section.visible !== false
+
+              const rowBtnStyle: React.CSSProperties = {
+                background: 'none', border: 'none', cursor: 'pointer', padding: '0 10px',
+                color: '#9a9080', fontSize: 9, lineHeight: 1, display: 'flex', alignItems: 'center',
+              }
 
               return (
                 <div key={key} style={{ border: '0.5px solid #e0d8c8', borderBottom: 'none', background: '#fff' }}>
-                  {/* Section header */}
-                  <button
-                    onClick={() => setOpenSection(isOpen ? null : key)}
-                    style={{
-                      width: '100%', background: isOpen ? '#faf7f2' : '#fff',
-                      border: 'none', padding: '13px 14px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      cursor: 'pointer', textAlign: 'left',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
-                      <span style={{ ...th, fontSize: 11 }}>{SECTION_LABELS[key] ?? key}</span>
-                      <span style={{ fontSize: 11, color: '#b08d57', fontFamily: "'EB Garamond', serif", fontStyle: 'italic' }}>
-                        {currentDesign?.label}
-                      </span>
-                      <span style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
-                        <span style={{ width: 9, height: 9, borderRadius: '50%', background: scheme.colorPrimary, display: 'inline-block', border: '0.5px solid #e0d8c8' }} />
-                        <span style={{ fontSize: 10, color: '#7a6e5f', fontFamily: "'EB Garamond', serif" }}>{section.color_scheme}</span>
-                      </span>
-                      {hasCustomBg && <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>fondo personalizado</span>}
+                  {/* Section header row */}
+                  <div style={{ display: 'flex', alignItems: 'stretch', background: isOpen ? '#faf7f2' : '#fff' }}>
+
+                    {/* Reorder buttons */}
+                    <div style={{ display: 'flex', flexDirection: 'column', borderRight: '0.5px solid #ede8df', flexShrink: 0 }}>
+                      {key === 'envelope' ? (
+                        <div style={{ ...rowBtnStyle, flex: 1, fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.35, justifyContent: 'center', pointerEvents: 'none' }} title={T('themeLocked')}>⊥</div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={e => { e.stopPropagation(); moveSection(key, -1) }}
+                            disabled={idx <= 1}
+                            style={{ ...rowBtnStyle, flex: 1, opacity: idx <= 1 ? 0.25 : 1 }}
+                            title={T('themeMoveUp')}
+                          >▲</button>
+                          <button
+                            onClick={e => { e.stopPropagation(); moveSection(key, 1) }}
+                            disabled={idx === sections.length - 1}
+                            style={{ ...rowBtnStyle, flex: 1, opacity: idx === sections.length - 1 ? 0.25 : 1 }}
+                            title={T('themeMoveDown')}
+                          >▼</button>
+                        </>
+                      )}
                     </div>
-                    <span style={{ fontSize: 13, color: '#7a6e5f', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block', flexShrink: 0, marginLeft: 8 }}>▾</span>
-                  </button>
+
+                    {/* Accordion toggle */}
+                    <button
+                      onClick={() => setOpenSection(isOpen ? null : key)}
+                      style={{
+                        flex: 1, background: 'transparent', border: 'none', padding: '11px 14px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer', textAlign: 'left', minWidth: 0,
+                        opacity: isVisible ? 1 : 0.45,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                        <span style={{ ...th, fontSize: 11 }}>{SECTION_LABELS[key] ?? key}</span>
+                        <span style={{ fontSize: 11, color: '#b08d57', fontFamily: "'EB Garamond', serif", fontStyle: 'italic' }}>
+                          {currentDesign?.label}
+                        </span>
+                        <span style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
+                          <span style={{ width: 9, height: 9, borderRadius: '50%', background: scheme.colorPrimary, display: 'inline-block', border: '0.5px solid #e0d8c8' }} />
+                          <span style={{ fontSize: 10, color: '#7a6e5f', fontFamily: "'EB Garamond', serif" }}>{section.color_scheme}</span>
+                        </span>
+                        {hasCustomBg && <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>{T('themeCustomBg')}</span>}
+                      </div>
+                      <span style={{ fontSize: 13, color: '#7a6e5f', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block', flexShrink: 0, marginLeft: 8 }}>▾</span>
+                    </button>
+
+                    {/* Visibility toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', borderLeft: '0.5px solid #ede8df', flexShrink: 0 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }} title={isVisible ? T('themeHidden') : T('themeVisible')}>
+                        <input
+                          type="checkbox"
+                          checked={isVisible}
+                          onChange={() => toggleVisible(key)}
+                          style={{ accentColor: '#b08d57', cursor: 'pointer', width: 13, height: 13 }}
+                        />
+                        <span style={{ fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: isVisible ? '#7a6e5f' : '#b0a090', fontFamily: "'EB Garamond', serif" }}>
+                          {isVisible ? T('themeVisible') : T('themeHidden')}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
 
                   {/* Expanded panel */}
                   {isOpen && (
@@ -488,7 +566,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                       {/* Template preview grid */}
                       <div style={{ marginTop: 16, marginBottom: 16 }}>
-                        <p style={{ ...th, marginBottom: 10 }}>Plantilla</p>
+                        <p style={{ ...th, marginBottom: 10 }}>{T('themeTemplate')}</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           {designs.map(d => (
                             <button
@@ -525,7 +603,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                       {/* Colour scheme */}
                       <div style={{ marginBottom: 16 }}>
-                        <p style={{ ...th, marginBottom: 8 }}>Paleta de colores</p>
+                        <p style={{ ...th, marginBottom: 8 }}>{T('themePalette')}</p>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {colorSchemes.map(cs => (
                             <button
@@ -551,11 +629,11 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                       {/* Background */}
                       <div>
-                        <p style={{ ...th, marginBottom: 10 }}>Fondo</p>
+                        <p style={{ ...th, marginBottom: 10 }}>{T('themeBackground')}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
                           <div>
-                            <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>URL de imagen de fondo</label>
+                            <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeBgUrl')}</label>
                             <input
                               type="url"
                               placeholder="https://images.unsplash.com/…"
@@ -567,7 +645,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                             <div>
-                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Color de fondo</label>
+                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeBgColor')}</label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                                 <input
                                   type="color"
@@ -576,16 +654,16 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                                   style={{ width: 30, height: 24, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none' }}
                                 />
                                 <span style={{ fontSize: 12, fontFamily: "'EB Garamond', serif", color: '#201d19' }}>
-                                  {section.background_color ?? 'Ninguno'}
+                                  {section.background_color ?? T('none')}
                                 </span>
                                 {section.background_color && (
-                                  <button onClick={() => update(key, { background_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>Limpiar</button>
+                                  <button onClick={() => update(key, { background_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>{T('clear')}</button>
                                 )}
                               </div>
                             </div>
 
                             <div>
-                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>Color de texto</label>
+                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeFontColor')}</label>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                                 <input
                                   type="color"
@@ -594,10 +672,10 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                                   style={{ width: 30, height: 24, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none' }}
                                 />
                                 <span style={{ fontSize: 12, fontFamily: "'EB Garamond', serif", color: '#201d19' }}>
-                                  {section.font_color ?? 'Por defecto'}
+                                  {section.font_color ?? T('default')}
                                 </span>
                                 {section.font_color && (
-                                  <button onClick={() => update(key, { font_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>Limpiar</button>
+                                  <button onClick={() => update(key, { font_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>{T('clear')}</button>
                                 )}
                               </div>
                             </div>
@@ -606,7 +684,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                           {hasCustomBg && (
                             <div>
                               <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 5 }}>
-                                Opacidad de superposición — {Math.round(section.overlay_opacity * 100)}%
+                                {T('themeOverlay')} — {Math.round(section.overlay_opacity * 100)}%
                               </label>
                               <input
                                 type="range"
@@ -668,9 +746,11 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                 <div
                   key={section.section_key}
                   ref={el => { sectionElRefs.current[section.section_key] = el }}
-                  style={openSection === section.section_key
-                    ? { overflow: 'hidden', outline: '2px solid #b08d57', outlineOffset: -2, zIndex: 1, position: 'relative' }
-                    : { overflow: 'hidden' }}
+                  style={{
+                    overflow: 'hidden',
+                    opacity: section.visible === false ? 0.35 : 1,
+                    ...(openSection === section.section_key ? { outline: '2px solid #b08d57', outlineOffset: -2, zIndex: 1, position: 'relative' } : {}),
+                  }}
                 >
                   <SectionTheme sectionCfg={{ colorScheme: section.color_scheme, fontColor: section.font_color ?? '' }}>
                     <PreviewFadeIn section={section}>

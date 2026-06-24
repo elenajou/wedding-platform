@@ -258,6 +258,10 @@ export default function EnvelopeGate({ dict, lang, design, backgroundUrl, backgr
               <link rel="stylesheet" href={namesFontUrl} />
             )}
 
+            {activeLetterEyebrow && (
+              <p className={styles.letterEyebrow}>{activeLetterEyebrow}</p>
+            )}
+
             <p className={styles.letterGreeting}>
               {(() => {
                 if (activeLetterGreeting) {

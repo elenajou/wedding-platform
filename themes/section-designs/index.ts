@@ -8,6 +8,7 @@ export type SectionKey =
   | 'video'
   | 'gallery'
   | 'faq'
+  | 'location'
 
 export type DesignMeta = {
   key: string
@@ -79,6 +80,9 @@ export const SECTION_DESIGNS: Record<SectionKey, DesignMeta[]> = {
     { key: 'Minimal', label: 'Minimal', description: 'Simple list with thin dividers',                    supportsBackgroundImage: false },
     { key: 'Boxed',   label: 'Boxed',   description: 'Each Q&A in a bordered box',                        supportsBackgroundImage: false },
     { key: 'Split',   label: 'Split',   description: 'Question left, answer right two-column',            supportsBackgroundImage: false },
+  ],
+  location: [
+    { key: 'Classic', label: 'Classic', description: 'Centered cards with map embed',                     supportsBackgroundImage: false },
   ],
 }
 

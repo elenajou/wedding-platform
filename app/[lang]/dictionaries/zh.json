@@ -108,6 +108,11 @@
     "items": [],
     "close": "关闭邀请函"
   },
+  "location": {
+    "sectionLabel": "地点",
+    "openInGoogleMaps": "在Google地图中打开",
+    "openInWaze": "在Waze中打开"
+  },
   "languageSwitcher": {
     "label": "语言"
   }

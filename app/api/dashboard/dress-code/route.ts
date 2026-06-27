@@ -10,13 +10,13 @@ export async function GET() {
 
   try {
     const rows = await sql`
-      SELECT * FROM wedding_locations
+      SELECT * FROM wedding_dress_code
       WHERE wedding_id = ${session.weddingId}
       ORDER BY sort_order
     `
     return NextResponse.json(rows)
   } catch (err) {
-    console.error('[dashboard/location GET]', err)
+    console.error('[dashboard/dress-code GET]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -27,20 +27,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
+    const imageUrlsJson = JSON.stringify(body.image_urls ?? [])
+    const localeContentJson = JSON.stringify(body.locale_content ?? {})
     const rows = await sql`
-      INSERT INTO wedding_locations (wedding_id, sort_order, title, address, description, image_url, maps_link, waze_link, embed_url, font_title, font_description, color_title, color_description, size_title, size_description, spacing_title, spacing_description, italic_title, italic_description, bold_title, bold_description)
+      INSERT INTO wedding_dress_code
+        (wedding_id, sort_order, title, description, image_urls, locale_content)
       VALUES (
         ${session.weddingId}, ${body.sort_order ?? 0},
-        ${body.title}, ${body.address ?? ''},
-        ${body.description ?? ''}, ${body.image_url ?? ''},
-        ${body.maps_link ?? ''}, ${body.waze_link ?? ''},
-        ${body.embed_url ?? ''},
-        ${body.font_title ?? ''}, ${body.font_description ?? ''},
-        ${body.color_title ?? ''}, ${body.color_description ?? ''},
-        ${body.size_title ?? ''}, ${body.size_description ?? ''},
-        ${body.spacing_title ?? ''}, ${body.spacing_description ?? ''},
-        ${body.italic_title ?? false}, ${body.italic_description ?? false},
-        ${body.bold_title ?? false}, ${body.bold_description ?? false}
+        ${body.title ?? ''}, ${body.description ?? ''},
+        ${imageUrlsJson}::jsonb, ${localeContentJson}::jsonb
       )
       RETURNING *
     `
@@ -48,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json(rows[0], { status: 201 })
   } catch (err) {
-    console.error('[dashboard/location POST]', err)
+    console.error('[dashboard/dress-code POST]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

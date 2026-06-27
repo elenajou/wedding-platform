@@ -15,9 +15,8 @@ export async function POST(req: NextRequest) {
 
     if (phone) {
       const normalized = (phone as string).trim()
-      const stripped = normalized.replace(/^\+/, '')
 
-      let rows = await sql`
+      const rows = await sql`
         SELECT g.id, g.name, g.language, g.table_name, g.group_id,
                ig.id   AS ig_id,
                ig.name AS ig_name,
@@ -27,19 +26,6 @@ export async function POST(req: NextRequest) {
         WHERE g.wedding_id = ${weddingId} AND g.phone = ${normalized}
         LIMIT 1
       `
-
-      if (!rows[0] && stripped !== normalized) {
-        rows = await sql`
-          SELECT g.id, g.name, g.language, g.table_name, g.group_id,
-                 ig.id   AS ig_id,
-                 ig.name AS ig_name,
-                 ig.allocated_seats
-          FROM guests g
-          LEFT JOIN invitation_groups ig ON ig.id = g.group_id AND ig.wedding_id = ${weddingId}
-          WHERE g.wedding_id = ${weddingId} AND g.phone = ${stripped}
-          LIMIT 1
-        `
-      }
 
       if (!rows[0]) return NextResponse.json({ found: false })
 

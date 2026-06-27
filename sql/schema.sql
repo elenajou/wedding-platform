@@ -20,6 +20,7 @@ CREATE TABLE weddings (
   feature_schedule          boolean NOT NULL DEFAULT true,
   feature_faq               boolean NOT NULL DEFAULT true,
   feature_seating_card      boolean NOT NULL DEFAULT true,
+  feature_dress_code        boolean NOT NULL DEFAULT false,
   -- Per-section enabled design keys; empty {} means all designs are allowed
   enabled_designs           jsonb NOT NULL DEFAULT '{}',
   -- Dashboard UI language
@@ -158,7 +159,7 @@ CREATE TABLE rsvps (
 -- ── Indexes ────────────────────────────────────────────────────────────────
 
 CREATE INDEX idx_weddings_active ON weddings (active);
-CREATE INDEX idx_guests_phone ON guests (phone) WHERE phone IS NOT NULL;
+CREATE UNIQUE INDEX idx_guests_phone ON guests (wedding_id, phone) WHERE phone IS NOT NULL;
 CREATE INDEX idx_guests_wedding_id ON guests (wedding_id);
 CREATE INDEX idx_invitation_groups_wedding_id ON invitation_groups (wedding_id);
 CREATE INDEX idx_invitation_groups_passcode ON invitation_groups (passcode) WHERE passcode IS NOT NULL;
@@ -173,12 +174,29 @@ CREATE TABLE IF NOT EXISTS wedding_locations (
   sort_order  integer NOT NULL DEFAULT 0,
   title       text NOT NULL DEFAULT '',
   address     text NOT NULL DEFAULT '',
+  description text NOT NULL DEFAULT '',
+  image_url   text NOT NULL DEFAULT '',
   maps_link   text NOT NULL DEFAULT '',
   waze_link   text NOT NULL DEFAULT '',
-  embed_url   text NOT NULL DEFAULT '',
-  created_at  timestamptz NOT NULL DEFAULT now()
+  embed_url        text NOT NULL DEFAULT '',
+  font_title       text NOT NULL DEFAULT '',
+  font_description text NOT NULL DEFAULT '',
+  created_at       timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_wedding_locations_wedding_id ON wedding_locations (wedding_id);
+
+-- ── Dress code entries ────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS wedding_dress_code (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  wedding_id     uuid NOT NULL REFERENCES weddings(id) ON DELETE CASCADE,
+  sort_order     integer NOT NULL DEFAULT 0,
+  title          text NOT NULL DEFAULT '',
+  description    text NOT NULL DEFAULT '',
+  image_urls     jsonb NOT NULL DEFAULT '[]',
+  locale_content jsonb NOT NULL DEFAULT '{}',
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_wedding_dress_code_wedding_id ON wedding_dress_code (wedding_id);
 
 -- ── Hero elements ──────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS hero_elements (

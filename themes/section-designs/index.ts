@@ -9,6 +9,7 @@ export type SectionKey =
   | 'gallery'
   | 'faq'
   | 'location'
+  | 'dresscode'
 
 export type DesignMeta = {
   key: string
@@ -83,6 +84,9 @@ export const SECTION_DESIGNS: Record<SectionKey, DesignMeta[]> = {
   ],
   location: [
     { key: 'Classic', label: 'Classic', description: 'Centered cards with map embed',                     supportsBackgroundImage: false },
+  ],
+  dresscode: [
+    { key: 'Classic', label: 'Classic', description: 'Centered cards with images and description',         supportsBackgroundImage: false },
   ],
 }
 

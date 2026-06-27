@@ -15,7 +15,7 @@
     "fromLine": "来自：{bride} 与 {groom}",
     "toPhone": "收件人（电话号码）",
     "toCode": "收件人（邀请码）",
-    "phonePlaceholder": "+86 138 0000 0000",
+    "phonePlaceholder": "60006000",
     "codePlaceholder": "例如 JOHN24",
     "errorEmpty": "请输入您的{mode}",
     "modePhone": "电话号码",
@@ -110,8 +110,10 @@
   },
   "location": {
     "sectionLabel": "地点",
-    "openInGoogleMaps": "在Google地图中打开",
     "openInWaze": "在Waze中打开"
+  },
+  "dresscode": {
+    "sectionLabel": "着装要求"
   },
   "languageSwitcher": {
     "label": "语言"

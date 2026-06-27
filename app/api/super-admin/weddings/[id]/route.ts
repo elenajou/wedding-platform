@@ -36,6 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             feature_schedule       = ${features?.schedule},
             feature_faq            = ${features?.faq},
             feature_seating_card   = ${features?.seatingCard},
+            feature_dress_code     = ${features?.dressCode},
             enabled_designs        = ${enabledDesignsJson}::jsonb
           WHERE id = ${id}
           RETURNING *
@@ -56,6 +57,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             feature_schedule       = ${features?.schedule},
             feature_faq            = ${features?.faq},
             feature_seating_card   = ${features?.seatingCard},
+            feature_dress_code     = ${features?.dressCode},
             enabled_designs        = ${enabledDesignsJson}::jsonb
           WHERE id = ${id}
           RETURNING *

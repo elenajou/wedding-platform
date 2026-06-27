@@ -12,6 +12,7 @@
     "@formatjs/intl-localematcher": "^0.8.4",
     "@neondatabase/serverless": "^1.1.0",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
     "jose": "^5.9.6",
     "negotiator": "^1.0.0",

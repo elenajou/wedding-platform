@@ -11,28 +11,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const body = await req.json()
+    const imageUrlsJson = JSON.stringify(body.image_urls ?? [])
+    const localeContentJson = JSON.stringify(body.locale_content ?? {})
     const rows = await sql`
-      UPDATE wedding_locations
-      SET sort_order       = ${body.sort_order},
-          title            = ${body.title},
-          address          = ${body.address ?? ''},
-          description      = ${body.description ?? ''},
-          image_url        = ${body.image_url ?? ''},
-          maps_link        = ${body.maps_link ?? ''},
-          waze_link        = ${body.waze_link ?? ''},
-          embed_url        = ${body.embed_url ?? ''},
-          font_title        = ${body.font_title ?? ''},
-          font_description  = ${body.font_description ?? ''},
-          color_title       = ${body.color_title ?? ''},
-          color_description = ${body.color_description ?? ''},
-          size_title        = ${body.size_title ?? ''},
-          size_description  = ${body.size_description ?? ''},
-          spacing_title     = ${body.spacing_title ?? ''},
-          spacing_description = ${body.spacing_description ?? ''},
-          italic_title      = ${body.italic_title ?? false},
-          italic_description = ${body.italic_description ?? false},
-          bold_title        = ${body.bold_title ?? false},
-          bold_description  = ${body.bold_description ?? false}
+      UPDATE wedding_dress_code
+      SET sort_order     = ${body.sort_order},
+          title          = ${body.title ?? ''},
+          description    = ${body.description ?? ''},
+          image_urls     = ${imageUrlsJson}::jsonb,
+          locale_content = ${localeContentJson}::jsonb
       WHERE id = ${id} AND wedding_id = ${session.weddingId}
       RETURNING *
     `
@@ -41,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json(rows[0])
   } catch (err) {
-    console.error('[dashboard/location/[id] PUT]', err)
+    console.error('[dashboard/dress-code/[id] PUT]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -52,12 +39,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   try {
     const { id } = await params
-    await sql`DELETE FROM wedding_locations WHERE id = ${id} AND wedding_id = ${session.weddingId}`
+    await sql`DELETE FROM wedding_dress_code WHERE id = ${id} AND wedding_id = ${session.weddingId}`
     const config = await getWeddingConfigById(session.weddingId)
     if (config) revalidateWeddingPages(config.locales)
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('[dashboard/location/[id] DELETE]', err)
+    console.error('[dashboard/dress-code/[id] DELETE]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

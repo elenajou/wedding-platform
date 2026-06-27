@@ -10,11 +10,11 @@ export default async function EditWeddingPage({ params }: Props) {
   if (!config) notFound()
 
   return (
-    <main style={{ minHeight: '100svh', background: '#1e1a16', fontFamily: "'EB Garamond', serif", padding: '2rem' }}>
+    <main style={{ minHeight: '100svh', background: '#faf7f2', fontFamily: "'EB Garamond', serif", padding: '2rem' }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <a href="/super-admin" style={{ color: '#6b6046', fontSize: 12, textDecoration: 'none' }}>← Back</a>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontStyle: 'italic', fontWeight: 300, color: '#f4efe5' }}>
+          <a href="/super-admin" style={{ color: '#7a6e5f', fontSize: 12, textDecoration: 'none' }}>← Back</a>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontStyle: 'italic', fontWeight: 300, color: '#201d19' }}>
             Edit: {config.slug}
           </h1>
         </div>

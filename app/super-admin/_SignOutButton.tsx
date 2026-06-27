@@ -9,7 +9,7 @@ export default function SignOutButton() {
   return (
     <button
       onClick={handleSignOut}
-      style={{ padding: '8px 18px', background: 'transparent', color: '#6b6046', border: '0.5px solid #3a3530', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 1 }}
+      style={{ padding: '8px 18px', background: 'transparent', color: '#7a6e5f', border: '0.5px solid #d4cbbf', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', borderRadius: 1 }}
     >
       Sign out
     </button>

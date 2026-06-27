@@ -5,7 +5,9 @@ import { dt } from '@/lib/dashboard-i18n'
 
 type Guest = { id: string; name: string; phone: string | null; email: string | null; group_id: string | null; group_name: string | null; table_name: string | null; language: string | null }
 type Group = { id: string; name: string }
-type Props = { initialItems: Guest[]; groups: Group[]; locale?: string }
+type Props = { initialItems: Guest[]; groups: Group[]; locale?: string; locales?: string[] }
+
+const LOCALE_NAMES: Record<string, string> = { en: 'English', es: 'Español', zh: '中文' }
 type SortKey = 'name' | 'phone' | 'table_name' | 'group_name' | 'language'
 type Sort = { key: SortKey; dir: 'asc' | 'desc' }
 
@@ -23,7 +25,7 @@ function ind(sort: Sort | null, key: SortKey) {
 
 const blank = { name: '', phone: '', email: '', group_id: '', table_name: '', language: '' }
 
-export default function GuestsTab({ initialItems, groups, locale }: Props) {
+export default function GuestsTab({ initialItems, groups, locale, locales }: Props) {
   const [items, setItems] = useState<Guest[]>(initialItems)
   const [sort, setSort] = useState<Sort | null>(null)
   const [form, setForm] = useState(blank)
@@ -78,17 +80,31 @@ export default function GuestsTab({ initialItems, groups, locale }: Props) {
     )
   }
 
+  function languageSelect(value: string, onChange: (v: string) => void) {
+    const options = locales && locales.length > 0 ? locales : Object.keys(LOCALE_NAMES)
+    return (
+      <select style={{ ...field, cursor: 'pointer' }} value={value} onChange={e => onChange(e.target.value)}>
+        <option value="">—</option>
+        {options.map(lc => <option key={lc} value={lc}>{LOCALE_NAMES[lc] ?? lc}</option>)}
+      </select>
+    )
+  }
+
   return (
     <div>
       <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '1.5rem' }}>{T('guestsTitle')}</p>
 
       <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr 1.5fr 1fr 1fr auto', gap: 8, marginBottom: '2rem', alignItems: 'flex-end' }}>
-        {([[T('guestsName'), 'name', 'Juan García'], [T('guestsPhone'), 'phone', '+52 55 0000'], ['Email', 'email', ''], [T('guestsTable'), 'table_name', locale === 'en' ? 'Table 1' : 'Mesa 1'], [T('guestsLanguage'), 'language', 'es']] as [string,string,string][]).map(([lbl, k, ph]) => (
+        {([[T('guestsName'), 'name', 'Juan García'], [T('guestsPhone'), 'phone', '60006000'], ['Email', 'email', ''], [T('guestsTable'), 'table_name', locale === 'en' ? 'Table 1' : 'Mesa 1']] as [string,string,string][]).map(([lbl, k, ph]) => (
           <div key={k}>
             <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{lbl}</div>
             <input style={field} placeholder={ph} value={(form as any)[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} required={k === 'name'} />
           </div>
         ))}
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{T('guestsLanguage')}</div>
+          {languageSelect(form.language, v => setForm(f => ({ ...f, language: v })))}
+        </div>
         <div>
           <div style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 3 }}>{T('guestsGroup')}</div>
           {groupSelect(form.group_id, v => setForm(f => ({ ...f, group_id: v })))}
@@ -117,7 +133,7 @@ export default function GuestsTab({ initialItems, groups, locale }: Props) {
                 <td style={td}><input style={field} value={editing.phone} onChange={e => setEditing(x => x && ({ ...x, phone: e.target.value }))} /></td>
                 <td style={td}><input style={field} value={editing.table_name} onChange={e => setEditing(x => x && ({ ...x, table_name: e.target.value }))} /></td>
                 <td style={td}>{groupSelect(editing.group_id, v => setEditing(x => x && ({ ...x, group_id: v })))}</td>
-                <td style={td}><input style={{ ...field, width: 60 }} value={editing.language} onChange={e => setEditing(x => x && ({ ...x, language: e.target.value }))} /></td>
+                <td style={td}>{languageSelect(editing.language, v => setEditing(x => x && ({ ...x, language: v })))}</td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
                   <button onClick={handleSaveEdit as any} style={{ ...btn(), marginRight: 6 }}>{T('save')}</button>
                   <button onClick={() => setEditing(null)} style={btn('#e8e0d4')}>{T('cancel')}</button>

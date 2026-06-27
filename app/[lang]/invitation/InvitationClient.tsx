@@ -14,6 +14,7 @@ import VideoSection from '@/components/VideoSection'
 import PhotoGallery from '@/components/PhotoGallery'
 import FAQAccordion from '@/components/FAQAccordion'
 import LocationSection from '@/components/LocationSection'
+import DressCode from '@/components/DressCode'
 import FadeIn from '@/components/FadeIn'
 
 // Re-export WeddingFeatures so the type is available via this module
@@ -159,6 +160,16 @@ export default function InvitationClient({ dict, lang, weddingDetails, features 
           locations={weddingDetails.locations}
           dict={dict.location}
           design={cfg('location').design}
+        />
+      ),
+    }),
+    ...(features.dressCode && weddingDetails.dressCodeItems.length > 0 && {
+      dresscode: (
+        <DressCode
+          items={weddingDetails.dressCodeItems}
+          dict={dict.dresscode}
+          locale={lang}
+          design={cfg('dresscode').design}
         />
       ),
     }),

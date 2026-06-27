@@ -28,7 +28,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       guest.group_name = groups[0]?.name ?? null
     }
     return NextResponse.json(guest)
-  } catch (err) {
+  } catch (err: any) {
+    if (err.code === '23505') {
+      return NextResponse.json({ error: 'Duplicate phone number — each guest must have a unique phone number.' }, { status: 409 })
+    }
     console.error('[dashboard/guests/[id] PUT]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

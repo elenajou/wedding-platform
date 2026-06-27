@@ -121,14 +121,47 @@ export type LocationItem = {
   sort_order: number
   title: string
   address: string
+  description: string
+  image_url: string
   maps_link: string
   waze_link: string
   embed_url: string
+  font_title: string
+  font_description: string
+  color_title: string
+  color_description: string
+  size_title: string
+  size_description: string
+  spacing_title: string
+  spacing_description: string
+  italic_title: boolean
+  italic_description: boolean
+  bold_title: boolean
+  bold_description: boolean
+}
+
+export type DressCodeItem = {
+  id: string
+  sort_order: number
+  title: string
+  description: string
+  image_urls: string[]
+  locale_content: Record<string, { title?: string; description?: string }>
+}
+
+export async function getWeddingDressCode(weddingId: string): Promise<DressCodeItem[]> {
+  const rows = await sql`
+    SELECT id, sort_order, title, description, image_urls, locale_content
+    FROM wedding_dress_code
+    WHERE wedding_id = ${weddingId}
+    ORDER BY sort_order
+  `
+  return rows as DressCodeItem[]
 }
 
 export async function getWeddingLocations(weddingId: string): Promise<LocationItem[]> {
   const rows = await sql`
-    SELECT id, sort_order, title, address, maps_link, waze_link, embed_url
+    SELECT id, sort_order, title, address, description, image_url, maps_link, waze_link, embed_url, font_title, font_description, color_title, color_description, size_title, size_description, spacing_title, spacing_description, italic_title, italic_description, bold_title, bold_description
     FROM wedding_locations
     WHERE wedding_id = ${weddingId}
     ORDER BY sort_order

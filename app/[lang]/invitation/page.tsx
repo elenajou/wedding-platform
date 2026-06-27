@@ -23,7 +23,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ lan
       weddingDetails={weddingDetails}
       features={config?.features ?? {
         rsvp: true, countdown: true, gallery: true, guestbook: false,
-        maps: false, qrCode: false, videoSection: true, schedule: true, faq: true, seatingCard: true,
+        maps: false, qrCode: false, videoSection: true, schedule: true, faq: true, seatingCard: true, dressCode: false,
       }}
     />
   )

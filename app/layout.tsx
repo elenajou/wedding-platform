@@ -1,10 +1,8 @@
-import { headers } from 'next/headers'
+import './globals.css'
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const h = await headers()
-  const lang = h.get('x-lang') ?? 'en'
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={lang}>
+    <html>
       <body>{children}</body>
     </html>
   )

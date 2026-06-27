@@ -15,7 +15,7 @@
     "fromLine": "From: {bride} & {groom}",
     "toPhone": "To (phone number)",
     "toCode": "To (invite code)",
-    "phonePlaceholder": "+1 416 555 0123",
+    "phonePlaceholder": "60006000",
     "codePlaceholder": "e.g. JOHN24",
     "errorEmpty": "Please enter your {mode}",
     "modePhone": "phone number",
@@ -110,8 +110,10 @@
   },
   "location": {
     "sectionLabel": "Location",
-    "openInGoogleMaps": "Open in Google Maps",
     "openInWaze": "Open in Waze"
+  },
+  "dresscode": {
+    "sectionLabel": "Dress Code"
   },
   "languageSwitcher": {
     "label": "Language"

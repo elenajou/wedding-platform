@@ -3,26 +3,54 @@
 import { useState } from 'react'
 import { dt } from '@/lib/dashboard-i18n'
 
-type Rsvp = { id: string; group_name: string | null; attending: boolean; guest_count: number; allocated_seats: number; message: string | null; rsvped_by: string | null; created_at: string; guest_attendance: any }
+type Rsvp = { id: string; group_name: string | null; table_name: string | null; attending: boolean; guest_count: number; allocated_seats: number; message: string | null; rsvped_by: string | null; created_at: string; guest_attendance: any }
 type Props = { initialItems: Rsvp[]; locale?: string }
 
-const th: React.CSSProperties = { padding: '8px 10px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7a6e5f', borderBottom: '0.5px solid #e0d8c8', textAlign: 'left', fontWeight: 400 }
+type SortKey = 'group_name' | 'table_name' | 'attending' | 'guest_count' | 'rsvped_by'
+type Sort = { key: SortKey; dir: 'asc' | 'desc' }
+
+const baseTh: React.CSSProperties = { padding: '8px 10px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', borderBottom: '0.5px solid #e0d8c8', textAlign: 'left', fontWeight: 400 }
 const td: React.CSSProperties = { padding: '10px 10px', fontSize: 14, color: '#201d19', borderBottom: '0.5px solid #f0ebe3', verticalAlign: 'top' }
+
+function thStyle(sort: Sort | null, key: SortKey): React.CSSProperties {
+  return { ...baseTh, cursor: 'pointer', userSelect: 'none', color: sort?.key === key ? '#b08d57' : '#7a6e5f' }
+}
+function ind(sort: Sort | null, key: SortKey) {
+  return sort?.key === key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
+}
 
 export default function RsvpsTab({ initialItems, locale }: Props) {
   const [items, setItems] = useState<Rsvp[]>(initialItems)
+  const [sort, setSort] = useState<Sort | null>(null)
   const [error, setError] = useState('')
 
   const T = (k: string) => dt(k, locale)
+
+  function toggleSort(key: SortKey) {
+    setSort(s => s?.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' })
+  }
+
+  const displayed = sort ? [...items].sort((a, b) => {
+    if (sort.key === 'attending') {
+      const cmp = a.attending === b.attending ? 0 : a.attending ? -1 : 1
+      return sort.dir === 'asc' ? cmp : -cmp
+    }
+    if (sort.key === 'guest_count') {
+      const cmp = (a.guest_count ?? 0) - (b.guest_count ?? 0)
+      return sort.dir === 'asc' ? cmp : -cmp
+    }
+    const av = a[sort.key] ?? ''
+    const bv = b[sort.key] ?? ''
+    const cmp = String(av).localeCompare(String(bv), undefined, { sensitivity: 'base' })
+    return sort.dir === 'asc' ? cmp : -cmp
+  }) : items
 
   const attending = items.filter(r => r.attending)
   const declined = items.filter(r => !r.attending)
 
   function countGuests(r: Rsvp): number {
-    // guest_count is stored as confirmed attending count by the RSVP form
     const n = Number(r.guest_count)
     if (n > 0) return n
-    // fallback: derive from per-member attendance data
     let ga: unknown = r.guest_attendance
     if (typeof ga === 'string') { try { ga = JSON.parse(ga) } catch { return 0 } }
     if (Array.isArray(ga) && ga.length > 0) return (ga as { attending: boolean }[]).filter(g => g.attending).length
@@ -57,18 +85,20 @@ export default function RsvpsTab({ initialItems, locale }: Props) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={th}>{T('rsvpsColGroup')}</th>
-              <th style={th}>{T('rsvpsColStatus')}</th>
-              <th style={th}>{T('rsvpsColGuests')}</th>
-              <th style={th}>{T('rsvpsColSentBy')}</th>
-              <th style={th}>{T('rsvpsColMessage')}</th>
-              <th style={th}></th>
+              <th style={thStyle(sort, 'group_name')} onClick={() => toggleSort('group_name')}>{T('rsvpsColGroup')}{ind(sort, 'group_name')}</th>
+              <th style={thStyle(sort, 'table_name')} onClick={() => toggleSort('table_name')}>{T('rsvpsColTable')}{ind(sort, 'table_name')}</th>
+              <th style={thStyle(sort, 'attending')} onClick={() => toggleSort('attending')}>{T('rsvpsColStatus')}{ind(sort, 'attending')}</th>
+              <th style={thStyle(sort, 'guest_count')} onClick={() => toggleSort('guest_count')}>{T('rsvpsColGuests')}{ind(sort, 'guest_count')}</th>
+              <th style={thStyle(sort, 'rsvped_by')} onClick={() => toggleSort('rsvped_by')}>{T('rsvpsColSentBy')}{ind(sort, 'rsvped_by')}</th>
+              <th style={{ ...baseTh, color: '#7a6e5f' }}>{T('rsvpsColMessage')}</th>
+              <th style={{ ...baseTh, color: '#7a6e5f' }}></th>
             </tr>
           </thead>
           <tbody>
-            {items.map(item => (
+            {displayed.map(item => (
               <tr key={item.id}>
                 <td style={td}>{item.group_name ?? '—'}</td>
+                <td style={td}>{item.table_name ?? '—'}</td>
                 <td style={td}>
                   <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: item.attending ? '#e8f4ec' : '#fce8e4', color: item.attending ? '#2d6a40' : '#c4614a' }}>
                     {item.attending ? T('rsvpsStatusAttending') : T('rsvpsStatusDeclined')}
@@ -84,7 +114,7 @@ export default function RsvpsTab({ initialItems, locale }: Props) {
                 </td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan={6} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>{T('rsvpsEmpty')}</td></tr>}
+            {displayed.length === 0 && <tr><td colSpan={7} style={{ ...td, color: '#7a6e5f', fontStyle: 'italic' }}>{T('rsvpsEmpty')}</td></tr>}
           </tbody>
         </table>
       </div>

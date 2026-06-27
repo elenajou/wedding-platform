@@ -40,6 +40,7 @@ export default function EditWeddingForm({ config }: Props) {
     featureGuestbook: config.features.guestbook,
     featureMaps: config.features.maps,
     featureQrCode: config.features.qrCode,
+    featureDressCode: config.features.dressCode,
   })
 
   // For each section, if enabledDesigns is empty (means all allowed), initialise all checked
@@ -117,6 +118,7 @@ export default function EditWeddingForm({ config }: Props) {
           guestbook: form.featureGuestbook,
           maps: form.featureMaps,
           qrCode: form.featureQrCode,
+          dressCode: form.featureDressCode,
         },
         enabledDesigns: enabledDesignsBody,
         dashboardLocale: form.dashboardLocale,
@@ -170,8 +172,8 @@ export default function EditWeddingForm({ config }: Props) {
     }
   }
 
-  const fieldStyle = { width: '100%', boxSizing: 'border-box' as const, padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '0.5px solid #3a3530', fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 300, color: '#f4efe5', outline: 'none' }
-  const labelStyle = { display: 'block' as const, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#6b6046', marginBottom: 4 }
+  const fieldStyle = { width: '100%', boxSizing: 'border-box' as const, padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '0.5px solid #d4cbbf', fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 300, color: '#201d19', outline: 'none' }
+  const labelStyle = { display: 'block' as const, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7a6e5f', marginBottom: 4 }
 
   const features: [string, string][] = [
     ['featureRsvp', 'RSVP'],
@@ -184,6 +186,7 @@ export default function EditWeddingForm({ config }: Props) {
     ['featureGuestbook', 'Guestbook'],
     ['featureMaps', 'Maps'],
     ['featureQrCode', 'QR Code'],
+    ['featureDressCode', 'Dress Code'],
   ]
 
   return (
@@ -217,12 +220,12 @@ export default function EditWeddingForm({ config }: Props) {
                   onChange={e => toggleLocale(code, e.target.checked)}
                   style={{ accentColor: '#b08d57' }}
                 />
-                <span style={{ fontSize: 14, color: '#c4b89a' }}>{label} <span style={{ fontSize: 11, color: '#6b6046' }}>({code})</span></span>
+                <span style={{ fontSize: 14, color: '#4b4331' }}>{label} <span style={{ fontSize: 11, color: '#7a6e5f' }}>({code})</span></span>
               </label>
             )
           })}
         </div>
-        <p style={{ fontSize: 11, color: '#6b6046', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>
+        <p style={{ fontSize: 11, color: '#7a6e5f', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>
           The default locale is always required. Change "Default Locale" above first if you want to uncheck it.
         </p>
       </div>
@@ -251,7 +254,7 @@ export default function EditWeddingForm({ config }: Props) {
                 onChange={e => set(key, e.target.checked)}
                 style={{ accentColor: '#b08d57' }}
               />
-              <span style={{ fontSize: 14, color: '#c4b89a' }}>{label}</span>
+              <span style={{ fontSize: 14, color: '#4b4331' }}>{label}</span>
             </label>
           ))}
         </div>
@@ -259,12 +262,12 @@ export default function EditWeddingForm({ config }: Props) {
 
       <div style={{ marginBottom: '2rem' }}>
         <p style={{ ...labelStyle, marginBottom: 4 }}>Template Visibility</p>
-        <p style={{ fontSize: 12, color: '#6b6046', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: '#7a6e5f', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", marginBottom: 16 }}>
           Uncheck templates to hide them from the couple's theme picker. All checked = all available (default).
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           {(Object.keys(SECTION_DESIGNS) as SectionKey[]).map(sectionKey => (
-            <div key={sectionKey} style={{ borderTop: '0.5px solid #2e2922', paddingTop: 12, paddingBottom: 12 }}>
+            <div key={sectionKey} style={{ borderTop: '0.5px solid #e8e0d0', paddingTop: 12, paddingBottom: 12 }}>
               <p style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#b08d57', marginBottom: 8 }}>
                 {SECTION_LABELS[sectionKey] ?? sectionKey}
               </p>
@@ -277,7 +280,7 @@ export default function EditWeddingForm({ config }: Props) {
                       onChange={e => toggleDesign(sectionKey, design.key, e.target.checked)}
                       style={{ accentColor: '#b08d57' }}
                     />
-                    <span style={{ fontSize: 13, color: '#c4b89a' }}>{design.label}</span>
+                    <span style={{ fontSize: 13, color: '#4b4331' }}>{design.label}</span>
                   </label>
                 ))}
               </div>
@@ -293,7 +296,7 @@ export default function EditWeddingForm({ config }: Props) {
         <button
           type="submit"
           disabled={loading}
-          style={{ flex: 1, padding: 13, background: saved ? '#4a7a4e' : '#b08d57', color: '#1e1a16', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1, transition: 'background 0.3s' }}
+          style={{ flex: 1, padding: 13, background: saved ? '#4a7a4e' : '#b08d57', color: '#ffffff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1, transition: 'background 0.3s' }}
         >
           {loading ? 'Saving...' : saved ? 'Saved' : 'Save Changes'}
         </button>
@@ -302,7 +305,7 @@ export default function EditWeddingForm({ config }: Props) {
           type="button"
           onClick={handleDelete}
           disabled={deleting}
-          style={{ padding: '13px 20px', background: 'transparent', color: '#c4614a', border: '0.5px solid #5a2a20', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: deleting ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: deleting ? 0.5 : 1 }}
+          style={{ padding: '13px 20px', background: 'transparent', color: '#c4614a', border: '0.5px solid #e0c0b8', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: deleting ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: deleting ? 0.5 : 1 }}
         >
           {deleting ? 'Deleting...' : 'Delete'}
         </button>

@@ -11,6 +11,7 @@ export type WeddingFeatures = {
   schedule: boolean
   faq: boolean
   seatingCard: boolean
+  dressCode: boolean
 }
 
 export type WeddingConfig = {
@@ -41,6 +42,7 @@ type DbWedding = {
   feature_schedule: boolean
   feature_faq: boolean
   feature_seating_card: boolean
+  feature_dress_code: boolean
   enabled_designs: Record<string, string[]> | null
   dashboard_locale: string
 }
@@ -70,6 +72,7 @@ function dbToConfig(row: DbWedding): WeddingConfig {
       schedule: row.feature_schedule,
       faq: row.feature_faq,
       seatingCard: row.feature_seating_card,
+      dressCode: row.feature_dress_code,
     },
     enabledDesigns: row.enabled_designs ?? {},
     dashboardLocale: row.dashboard_locale ?? 'es',
@@ -82,7 +85,7 @@ async function loadConfigs(): Promise<WeddingConfig[]> {
       SELECT id, slug, domains, default_locale, locales,
              feature_rsvp, feature_countdown, feature_gallery, feature_guestbook,
              feature_maps, feature_qr_code, feature_video_section, feature_schedule,
-             feature_faq, feature_seating_card, enabled_designs, dashboard_locale
+             feature_faq, feature_seating_card, feature_dress_code, enabled_designs, dashboard_locale
       FROM weddings
       WHERE active = true
     `

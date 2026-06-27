@@ -32,18 +32,18 @@ export default function SuperAdminLoginPage() {
   }
 
   return (
-    <main style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1e1a16', fontFamily: "'EB Garamond', serif" }}>
+    <main style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf7f2', fontFamily: "'EB Garamond', serif" }}>
       <div style={{ width: '100%', maxWidth: 340, padding: '2rem' }}>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontStyle: 'italic', fontWeight: 300, color: '#f4efe5', marginBottom: '0.5rem', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontStyle: 'italic', fontWeight: 300, color: '#201d19', marginBottom: '0.5rem', textAlign: 'center' }}>
           Platform Admin
         </h1>
-        <p style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6b6046', textAlign: 'center', marginBottom: '2rem' }}>
+        <p style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#7a6e5f', textAlign: 'center', marginBottom: '2rem' }}>
           Super Admin Access
         </p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6b6046', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#7a6e5f', marginBottom: 4 }}>
               Password
             </label>
             <input
@@ -52,7 +52,7 @@ export default function SuperAdminLoginPage() {
               onChange={e => setPassword(e.target.value)}
               required
               autoFocus
-              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '0.5px solid #3a3530', fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 300, color: '#f4efe5', outline: 'none' }}
+              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '0.5px solid #d4cbbf', fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 300, color: '#201d19', outline: 'none' }}
             />
           </div>
 
@@ -63,7 +63,7 @@ export default function SuperAdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', padding: 13, background: '#b08d57', color: '#1e1a16', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1 }}
+            style={{ width: '100%', padding: 13, background: '#b08d57', color: '#faf7f2', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1 }}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

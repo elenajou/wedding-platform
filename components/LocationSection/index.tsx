@@ -1,9 +1,9 @@
 import type { LocationItem } from '@/lib/wedding-data'
+import { buildGoogleFontsUrl } from '@/lib/google-fonts'
 import styles from './LocationSection.module.css'
 
 type Dict = {
   sectionLabel: string
-  openInGoogleMaps: string
   openInWaze: string
 }
 
@@ -29,8 +29,28 @@ export default function LocationSection({ locations, dict, design }: Props) {
         <div className={styles.cards}>
           {locations.map((loc) => (
             <div key={loc.id} className={styles.card}>
-              <p className={styles.cardTitle}>{loc.title}</p>
+              {loc.font_title && <link rel="stylesheet" href={buildGoogleFontsUrl([loc.font_title])} precedence="default" />}
+              {loc.font_description && loc.font_description !== loc.font_title && <link rel="stylesheet" href={buildGoogleFontsUrl([loc.font_description])} precedence="default" />}
+              {loc.image_url && (
+                <img src={loc.image_url} alt={loc.title} className={styles.cardImage} />
+              )}
+              <p className={styles.cardTitle} style={{
+                ...(loc.font_title ? { fontFamily: `'${loc.font_title}', serif` } : {}),
+                ...(loc.color_title ? { color: loc.color_title } : {}),
+                ...(loc.size_title ? { fontSize: loc.size_title } : {}),
+                ...(loc.spacing_title ? { letterSpacing: loc.spacing_title } : {}),
+                ...(loc.italic_title ? { fontStyle: 'italic' } : {}),
+                ...(loc.bold_title ? { fontWeight: 700 } : {}),
+              }}>{loc.title}</p>
               {loc.address && <p className={styles.cardAddress}>{loc.address}</p>}
+              {loc.description && <p className={styles.cardDescription} style={{
+                ...(loc.font_description ? { fontFamily: `'${loc.font_description}', serif` } : {}),
+                ...(loc.color_description ? { color: loc.color_description } : {}),
+                ...(loc.size_description ? { fontSize: loc.size_description } : {}),
+                ...(loc.spacing_description ? { letterSpacing: loc.spacing_description } : {}),
+                ...(loc.italic_description ? { fontStyle: 'italic' } : {}),
+                ...(loc.bold_description ? { fontWeight: 700 } : {}),
+              }}>{loc.description}</p>}
 
               {loc.embed_url && (
                 <div className={styles.mapWrap}>
@@ -44,18 +64,8 @@ export default function LocationSection({ locations, dict, design }: Props) {
                 </div>
               )}
 
-              <div className={styles.ctaRow}>
-                {loc.maps_link && (
-                  <a
-                    href={loc.maps_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.ctaBtn}
-                  >
-                    {dict.openInGoogleMaps}
-                  </a>
-                )}
-                {loc.waze_link && (
+              {loc.waze_link && (
+                <div className={styles.ctaRow}>
                   <a
                     href={loc.waze_link}
                     target="_blank"
@@ -64,8 +74,8 @@ export default function LocationSection({ locations, dict, design }: Props) {
                   >
                     {dict.openInWaze}
                   </a>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

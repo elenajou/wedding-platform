@@ -4,7 +4,6 @@ import { notFound, redirect } from 'next/navigation'
 import { getWeddingConfigById } from '@/lib/tenant'
 import { getDictionaryWithData, hasLocale } from './dictionaries'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
-import '../globals.css'
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1 }
 

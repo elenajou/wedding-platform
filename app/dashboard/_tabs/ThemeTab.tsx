@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { dt } from '@/lib/dashboard-i18n'
 import { SECTION_DESIGNS, type SectionKey } from '@/themes/section-designs'
 import { getAllColorSchemes, getColorScheme } from '@/themes/color-schemes'
-import { WEDDING_FONTS } from '@/lib/google-fonts'
 import type { HeroElement, HeroElementType } from '@/lib/wedding-data'
+import FontPicker from '@/app/dashboard/_FontPicker'
 import TemplatePreview from './_TemplatePreview'
 import SectionTheme from '@/components/SectionTheme'
 import InvitationHero from '@/components/InvitationHero'
@@ -17,6 +17,7 @@ import VideoSection from '@/components/VideoSection'
 import PhotoGallery from '@/components/PhotoGallery'
 import FAQAccordion from '@/components/FAQAccordion'
 import EnvelopeGate from '@/components/EnvelopeGate'
+import DressCode from '@/components/DressCode'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,14 +34,28 @@ type SectionRow = {
   visible: boolean
 }
 
+type ScheduleEvent = {
+  id: string
+  sort_order: number
+  time_label: string
+  iso_time: string
+  event_name: string
+  description: string | null
+  locale_content?: Record<string, any>
+}
 type Props = {
   initialSections: SectionRow[]
   enabledDesigns: Record<string, string[]>
   activeSectionKeys: string[]
-  weddingDetails?: Record<string, unknown> | null
+  initialWeddingDetails?: Record<string, unknown> | null
   locale?: string
   initialHeroElements: HeroElement[]
+  locales?: string[]
+  defaultLocale?: string
+  initialScheduleItems?: ScheduleEvent[]
 }
+
+const LOCALE_NAMES: Record<string, string> = { en: 'English', es: 'Español', zh: '中文' }
 
 // ── Preview dimensions (iPhone 14 Pro Max logical pixels) ────────────────────
 
@@ -222,13 +237,14 @@ const fieldStyle: React.CSSProperties = {
 const SECTION_LABELS: Record<string, string> = {
   envelope: 'Envelope Gate', hero: 'Hero', countdown: 'Countdown', seating: 'Seating Card',
   rsvp: 'RSVP Form', schedule: 'Day Schedule', video: 'Video', gallery: 'Gallery', faq: 'FAQ',
+  location: 'Location', dresscode: 'Dress Code',
 }
 
 const colorSchemes = getAllColorSchemes()
 
 // ── Live preview renderer ─────────────────────────────────────────────────────
 
-function renderPreviewSection(key: string, section: SectionRow, wd: Record<string, unknown> | null | undefined, heroElements?: HeroElement[]) {
+function renderPreviewSection(key: string, section: SectionRow, wd: Record<string, unknown> | null | undefined, heroElements?: HeroElement[], scheduleItems?: ScheduleEvent[]) {
   const design = section.design
   const brideName = (wd?.bride_name as string) || 'Sofia'
   const groomName = (wd?.groom_name as string) || 'Marco'
@@ -298,8 +314,12 @@ function renderPreviewSection(key: string, section: SectionRow, wd: Record<strin
           design={design}
         />
       )
-    case 'schedule':
-      return <DaySchedule dict={PREVIEW_DICT.schedule} design={design} />
+    case 'schedule': {
+      const previewEvents = scheduleItems && scheduleItems.length > 0
+        ? scheduleItems.map(e => ({ time: e.time_label, isoTime: e.iso_time, name: e.event_name, description: e.description ?? '' }))
+        : PREVIEW_DICT.schedule.events
+      return <DaySchedule dict={{ ...PREVIEW_DICT.schedule, events: previewEvents }} design={design} />
+    }
     case 'video': {
       const vType = (wd?.video_source_type as string) || 'youtube'
       const vId = (wd?.video_source_id as string) || 'dQw4w9WgXcQ'
@@ -328,6 +348,17 @@ function renderPreviewSection(key: string, section: SectionRow, wd: Record<strin
           design={design}
         />
       )
+    case 'dresscode':
+      return (
+        <DressCode
+          items={[
+            { id: '1', sort_order: 1, title: 'Black Tie', description: 'Formal evening attire for all guests.', image_urls: [], locale_content: {} },
+            { id: '2', sort_order: 2, title: 'Cocktail', description: 'Semi-formal. Suits or cocktail dresses.', image_urls: [], locale_content: {} },
+          ]}
+          dict={{ sectionLabel: 'Dress Code' }}
+          design={design}
+        />
+      )
     default:
       return null
   }
@@ -335,36 +366,145 @@ function renderPreviewSection(key: string, section: SectionRow, wd: Record<strin
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-// Stepper for CSS values — displays only the number, stores with unit appended
-function CSSValueStepper({ value, onChange, step = 1, unit = 'px', placeholder, style }: {
-  value: string; onChange: (v: string) => void
-  step?: number; unit?: string; placeholder?: string; style?: React.CSSProperties
+// ── AgendaPanel ───────────────────────────────────────────────────────────────
+
+function AgendaPanel({ items, onItemsChange, locales, defaultLocale, locale }: {
+  items: ScheduleEvent[]
+  onItemsChange: (items: ScheduleEvent[]) => void
+  locales?: string[]
+  defaultLocale?: string
+  locale?: string
 }) {
-  const inputStyle: React.CSSProperties = {
-    padding: '0 4px', background: '#fff', border: 'none',
-    fontFamily: "'EB Garamond', serif", fontSize: 12, color: '#201d19',
-    outline: 'none', width: 30, textAlign: 'center', height: 26, boxSizing: 'border-box',
+  const dl = defaultLocale ?? 'es'
+  const allLocales = locales && locales.length > 0 ? locales : [dl]
+  const [activeLang, setActiveLang] = useState(dl)
+  const [addTime, setAddTime] = useState('')
+  const [addIso, setAddIso] = useState('')
+  const [addContent, setAddContent] = useState<Record<string, { event_name: string; description: string }>>({})
+  const [adding, setAdding] = useState(false)
+  const [agError, setAgError] = useState('')
+
+  const T = (k: string) => dt(k, locale)
+  const sorted = [...items].sort((a, b) => a.sort_order - b.sort_order)
+
+  function getItemField(item: ScheduleEvent, field: 'event_name' | 'description'): string {
+    if (activeLang === dl) return (item[field] as string) ?? ''
+    return item.locale_content?.[activeLang]?.[field] ?? ''
   }
-  const arrowBtn: React.CSSProperties = {
-    background: 'none', border: 'none', cursor: 'pointer', color: '#9a9080',
-    fontSize: 10, padding: '0 3px', lineHeight: 1, height: 26, display: 'flex', alignItems: 'center',
+
+  function setItemField(id: string, field: 'event_name' | 'description', val: string) {
+    if (activeLang === dl) {
+      onItemsChange(items.map(i => i.id === id ? { ...i, [field]: val } : i))
+    } else {
+      onItemsChange(items.map(i => i.id === id ? {
+        ...i,
+        locale_content: { ...(i.locale_content ?? {}), [activeLang]: { ...(i.locale_content?.[activeLang] ?? {}), [field]: val } },
+      } : i))
+    }
   }
-  const numStr = value.match(/^(-?[\d.]+)/)?.[1] ?? ''
-  function step_(dir: 1 | -1) {
-    const num = numStr ? parseFloat(numStr) : 0
-    const next = Math.round((num + dir * step) * 1000) / 1000
-    onChange(`${next}${unit}`)
+
+  function getAdd(field: 'event_name' | 'description'): string {
+    return addContent[activeLang]?.[field] ?? ''
   }
+
+  function setAdd(field: 'event_name' | 'description', val: string) {
+    setAddContent(prev => ({ ...prev, [activeLang]: { ...(prev[activeLang] ?? {}), [field]: val } }))
+  }
+
+  function moveItem(id: string, dir: -1 | 1) {
+    const idx = sorted.findIndex(i => i.id === id)
+    const next = idx + dir
+    if (next < 0 || next >= sorted.length) return
+    const arr = [...sorted]
+    const aOrder = arr[idx].sort_order; const bOrder = arr[next].sort_order
+    arr[idx] = { ...arr[idx], sort_order: bOrder }
+    arr[next] = { ...arr[next], sort_order: aOrder }
+    onItemsChange(arr)
+  }
+
+  async function handleAdd() {
+    const eventName = addContent[dl]?.event_name ?? ''
+    if (!addTime || !eventName) { setAgError('Time and event name required'); return }
+    setAdding(true)
+    const maxOrder = items.length > 0 ? Math.max(...items.map(i => i.sort_order)) : 0
+    const localeContent: Record<string, any> = {}
+    for (const lc of allLocales.filter(l => l !== dl)) {
+      localeContent[lc] = { event_name: addContent[lc]?.event_name ?? '', description: addContent[lc]?.description ?? '' }
+    }
+    const body = { sort_order: maxOrder + 10, time_label: addTime, iso_time: addIso, event_name: eventName, description: addContent[dl]?.description || null, locale_content: localeContent }
+    const res = await fetch('/api/dashboard/schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (res.ok) {
+      const d = await res.json()
+      onItemsChange([...items, d].sort((a, b) => a.sort_order - b.sort_order))
+      setAddTime(''); setAddIso(''); setAddContent({})
+    } else { const d = await res.json(); setAgError(d.error ?? 'Failed') }
+    setAdding(false)
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm(T('scheduleDeleteConfirm'))) return
+    const res = await fetch(`/api/dashboard/schedule/${id}`, { method: 'DELETE' })
+    if (res.ok) onItemsChange(items.filter(i => i.id !== id))
+    else setAgError('Failed')
+  }
+
+  const ci: React.CSSProperties = {
+    padding: '4px 6px', background: '#fff', border: '0.5px solid #d4cbbf',
+    fontFamily: "'EB Garamond', serif", fontSize: 13, color: '#201d19',
+    outline: 'none', borderRadius: 1, boxSizing: 'border-box', height: 26,
+  }
+  const moveBtn = (disabled: boolean): React.CSSProperties => ({
+    background: 'none', border: 'none', cursor: disabled ? 'default' : 'pointer',
+    color: '#9a9080', opacity: disabled ? 0.25 : 1, padding: '0 1px', fontSize: 10, lineHeight: 1,
+  })
+  const tabBtn = (active: boolean): React.CSSProperties => ({
+    padding: '3px 10px', border: 'none', background: active ? '#fff' : 'transparent',
+    borderBottom: active ? '1.5px solid #b08d57' : '1.5px solid transparent',
+    fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase',
+    color: active ? '#b08d57' : '#9a9080', cursor: 'pointer', fontFamily: "'EB Garamond', serif",
+  })
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', border: '0.5px solid #d4cbbf', borderRadius: 1, overflow: 'hidden', height: 26, ...style }}>
-      <button type="button" style={arrowBtn} onClick={() => step_(-1)}>−</button>
-      <input
-        style={inputStyle}
-        value={numStr}
-        onChange={e => onChange(e.target.value ? `${e.target.value}${unit}` : '')}
-        placeholder={placeholder}
-      />
-      <button type="button" style={arrowBtn} onClick={() => step_(1)}>+</button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <style>{`.agenda-row::-webkit-scrollbar{height:3px}.agenda-row::-webkit-scrollbar-track{background:transparent}.agenda-row::-webkit-scrollbar-thumb{background:#d4cbbf;border-radius:2px}.agenda-row{scrollbar-width:thin;scrollbar-color:#d4cbbf transparent}`}</style>
+
+      {allLocales.length > 1 && (
+        <div style={{ display: 'flex', borderBottom: '0.5px solid #e0d8c8', marginBottom: 2 }}>
+          {allLocales.map(lc => <button key={lc} onClick={() => setActiveLang(lc)} style={tabBtn(activeLang === lc)}>{lc}</button>)}
+        </div>
+      )}
+
+      {sorted.map((item, idx) => (
+        <div key={item.id} className="agenda-row" style={{ overflowX: 'auto', background: '#fff', border: '0.5px solid #e0d8c8', borderRadius: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', minWidth: 'max-content' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <button onClick={() => moveItem(item.id, -1)} disabled={idx === 0} style={moveBtn(idx === 0)}>▲</button>
+              <button onClick={() => moveItem(item.id, 1)} disabled={idx === sorted.length - 1} style={moveBtn(idx === sorted.length - 1)}>▼</button>
+            </div>
+            <input style={{ ...ci, width: 80 }} value={item.time_label} onChange={e => onItemsChange(items.map(i => i.id === item.id ? { ...i, time_label: e.target.value } : i))} placeholder="4:00 PM" />
+            <input style={{ ...ci, width: 110 }} value={item.iso_time} onChange={e => onItemsChange(items.map(i => i.id === item.id ? { ...i, iso_time: e.target.value } : i))} placeholder="ISO time" />
+            <input style={{ ...ci, width: 140 }} value={getItemField(item, 'event_name')} onChange={e => setItemField(item.id, 'event_name', e.target.value)} placeholder="Event" />
+            <input style={{ ...ci, width: 160 }} value={getItemField(item, 'description')} onChange={e => setItemField(item.id, 'description', e.target.value)} placeholder="Description" />
+            <button onClick={() => handleDelete(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c4614a', fontSize: 12, padding: '0 2px', lineHeight: 1 }} title={T('delete')}>✕</button>
+          </div>
+        </div>
+      ))}
+
+      {items.length === 0 && <p style={{ fontSize: 12, color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif", margin: '4px 0' }}>{T('scheduleEmpty')}</p>}
+
+      <div className="agenda-row" style={{ overflowX: 'auto', border: '0.5px dashed #d4cbbf', borderRadius: 2, background: '#fdf9f3' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', minWidth: 'max-content' }}>
+          <div style={{ width: 16 }} />
+          <input style={{ ...ci, width: 80, background: '#fdf9f3' }} value={addTime} onChange={e => setAddTime(e.target.value)} placeholder="4:00 PM" />
+          <input style={{ ...ci, width: 110, background: '#fdf9f3' }} value={addIso} onChange={e => setAddIso(e.target.value)} placeholder="ISO time" />
+          <input style={{ ...ci, width: 140, background: '#fdf9f3' }} value={getAdd('event_name')} onChange={e => setAdd('event_name', e.target.value)} placeholder="Event" />
+          <input style={{ ...ci, width: 160, background: '#fdf9f3' }} value={getAdd('description')} onChange={e => setAdd('description', e.target.value)} placeholder="Description" />
+          <button onClick={handleAdd} disabled={adding} style={{ padding: '4px 12px', background: '#b08d57', color: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', cursor: adding ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: adding ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+            + {T('add')}
+          </button>
+          {agError && <span style={{ color: '#c4614a', fontSize: 11, fontStyle: 'italic' }}>{agError}</span>}
+        </div>
+      </div>
     </div>
   )
 }
@@ -404,8 +544,6 @@ function HeroElementsPanel({
   }
 
   function updateLocaleContent(id: string, locale: string, val: string) {
-    const el = elements.find(e => e.id === id)
-    if (!el) return
     onChange(elements.map(e => e.id === id ? {
       ...e,
       locale_content: { ...(e.locale_content ?? {}), [locale]: val },
@@ -466,7 +604,6 @@ function HeroElementsPanel({
     background: 'none', border: 'none', cursor: disabled ? 'default' : 'pointer',
     color: '#9a9080', opacity: disabled ? 0.25 : 1, padding: '0 1px', fontSize: 10, lineHeight: 1,
   })
-
   const tabBtn = (active: boolean): React.CSSProperties => ({
     padding: '3px 10px', border: 'none', background: active ? '#fff' : 'transparent',
     borderBottom: active ? '1.5px solid #b08d57' : '1.5px solid transparent',
@@ -476,9 +613,7 @@ function HeroElementsPanel({
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <style>{`.hero-el-row::-webkit-scrollbar{height:3px}.hero-el-row::-webkit-scrollbar-track{background:transparent}.hero-el-row::-webkit-scrollbar-thumb{background:#d4cbbf;border-radius:2px}.hero-el-row{scrollbar-width:thin;scrollbar-color:#d4cbbf transparent}`}</style>
-      {/* Single language tab strip for all elements */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {allLocales.length > 1 && (
         <div style={{ display: 'flex', borderBottom: '0.5px solid #e0d8c8', marginBottom: 2 }}>
           {allLocales.map(lc => (
@@ -488,127 +623,55 @@ function HeroElementsPanel({
       )}
 
       {sorted.map((el, idx) => (
-        <div key={el.id} className="hero-el-row" style={{ overflowX: 'auto', background: '#fff', border: '0.5px solid #e0d8c8', borderRadius: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 6px', minWidth: 'max-content' }}>
+        <div key={el.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '0.5px solid #e0d8c8', borderRadius: 2, padding: '5px 8px' }}>
           {/* Move */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
             <button onClick={() => moveElement(el.id, -1)} disabled={idx === 0} style={moveBtn(idx === 0)}>▲</button>
             <button onClick={() => moveElement(el.id, 1)} disabled={idx === sorted.length - 1} style={moveBtn(idx === sorted.length - 1)}>▼</button>
           </div>
-          {/* Type badge */}
-          <span style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#b08d57', fontFamily: "'EB Garamond', serif", whiteSpace: 'nowrap', minWidth: 52 }}>
+          {/* Type */}
+          <span style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#b08d57', fontFamily: "'EB Garamond', serif", whiteSpace: 'nowrap', width: 48, flexShrink: 0 }}>
             {ELEMENT_TYPE_LABELS[el.element_type as HeroElementType] ?? el.element_type}
           </span>
-          {/* Content input for active language */}
+          {/* Content */}
           {el.element_type !== 'names' ? (
             activeLang === dl ? (
-              <input
-                style={{ ...compactInput, flex: 1, minWidth: 60 }}
-                value={el.content}
-                onChange={e => updateEl(el.id, { content: e.target.value })}
-                placeholder="content"
-              />
+              <input style={{ ...compactInput, flex: 1, minWidth: 60 }} value={el.content} onChange={e => updateEl(el.id, { content: e.target.value })} placeholder="content" />
             ) : (
-              <input
-                style={{ ...compactInput, flex: 1, minWidth: 60 }}
-                value={el.locale_content?.[activeLang] ?? ''}
-                onChange={e => updateLocaleContent(el.id, activeLang, e.target.value)}
-                placeholder={`${activeLang} content`}
-              />
+              <input style={{ ...compactInput, flex: 1, minWidth: 60 }} value={el.locale_content?.[activeLang] ?? ''} onChange={e => updateLocaleContent(el.id, activeLang, e.target.value)} placeholder={`${activeLang} content`} />
             )
           ) : (
-            <span style={{ flex: 1, fontSize: 11, color: '#9a9080', fontStyle: 'italic' }}>auto</span>
+            <span style={{ flex: 1, fontSize: 11, color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>auto</span>
           )}
-          {/* Font */}
-          <select
-            style={{ ...compactSelect, width: 130 }}
-            value={el.font_family}
-            onChange={e => updateEl(el.id, { font_family: e.target.value })}
-          >
-            <option value="">EB Garamond</option>
-            <optgroup label="Script">
-              {WEDDING_FONTS.filter(f => f.category === 'script').map(f => (
-                <option key={f.family} value={f.family}>{f.family}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Serif">
-              {WEDDING_FONTS.filter(f => f.category === 'serif').map(f => (
-                <option key={f.family} value={f.family}>{f.family}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Display">
-              {WEDDING_FONTS.filter(f => f.category === 'display').map(f => (
-                <option key={f.family} value={f.family}>{f.family}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Sans-serif">
-              {WEDDING_FONTS.filter(f => f.category === 'sans-serif').map(f => (
-                <option key={f.family} value={f.family}>{f.family}</option>
-              ))}
-            </optgroup>
-          </select>
-          {/* Weight */}
-          <select
-            style={{ ...compactSelect, width: 72 }}
-            value={el.font_weight}
-            onChange={e => updateEl(el.id, { font_weight: e.target.value })}
-          >
-            <option value="300">Thin</option>
-            <option value="400">Regular</option>
-            <option value="700">Bold</option>
-          </select>
-          {/* Size */}
-          <CSSValueStepper
-            value={el.font_size ?? ''}
-            onChange={v => updateEl(el.id, { font_size: v })}
-            step={1} unit="px" placeholder="size"
-          />
-          {/* Letter spacing */}
-          <CSSValueStepper
-            value={el.letter_spacing ?? ''}
-            onChange={v => updateEl(el.id, { letter_spacing: v })}
-            step={0.01} unit="em" placeholder="spacing"
-          />
-          {/* Font color */}
-          <input
-            type="color"
-            value={el.font_color || '#ffffff'}
-            onChange={e => updateEl(el.id, { font_color: e.target.value })}
-            style={{ width: 26, height: 26, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none', flexShrink: 0 }}
-            title="Font color"
-          />
-          {/* Italic */}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            <input
-              type="checkbox"
-              checked={el.font_style === 'italic'}
-              onChange={e => updateEl(el.id, { font_style: e.target.checked ? 'italic' : 'normal' })}
-              style={{ accentColor: '#b08d57', width: 11, height: 11 }}
+          {/* FontPicker — 300px fixed, shrinks last */}
+          <div style={{ width: 300, flexShrink: 0 }}>
+            <FontPicker
+              value={el.font_family}
+              onChange={v => updateEl(el.id, { font_family: v })}
+              color={el.font_color || '#ffffff'}
+              onColorChange={v => updateEl(el.id, { font_color: v })}
+              size={el.font_size ?? ''}
+              onSizeChange={v => updateEl(el.id, { font_size: v })}
+              letterSpacing={el.letter_spacing ?? ''}
+              onLetterSpacingChange={v => updateEl(el.id, { letter_spacing: v })}
+              italic={el.font_style === 'italic'}
+              onItalicChange={v => updateEl(el.id, { font_style: v ? 'italic' : 'normal' })}
+              bold={el.font_weight === '700'}
+              onBoldChange={v => updateEl(el.id, { font_weight: v ? '700' : '400' })}
             />
-            <span style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7a6e5f' }}>I</span>
-          </label>
+          </div>
           {/* Visible */}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            <input
-              type="checkbox"
-              checked={el.visible !== false}
-              onChange={e => updateEl(el.id, { visible: e.target.checked })}
-              style={{ accentColor: '#b08d57', width: 11, height: 11 }}
-            />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <input type="checkbox" checked={el.visible !== false} onChange={e => updateEl(el.id, { visible: e.target.checked })} style={{ accentColor: '#b08d57', width: 11, height: 11 }} />
             <span style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7a6e5f' }}>Vis</span>
           </label>
           {/* Delete */}
-          <button
-            onClick={() => deleteElement(el.id)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c4614a', fontSize: 12, padding: '0 2px', lineHeight: 1 }}
-            title="Delete"
-          >✕</button>
-        </div>
+          <button onClick={() => deleteElement(el.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c4614a', fontSize: 12, padding: '0 2px', lineHeight: 1, flexShrink: 0 }} title="Delete">✕</button>
         </div>
       ))}
 
       {/* Add new element */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
         <select
           style={{ ...compactSelect, flex: 1 }}
           value={newType}
@@ -637,10 +700,28 @@ function HeroElementsPanel({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ThemeTab({ initialSections, enabledDesigns, activeSectionKeys, weddingDetails, locale, initialHeroElements }: Props) {
+export default function ThemeTab({ initialSections, enabledDesigns, activeSectionKeys, initialWeddingDetails, locale, initialHeroElements, locales, defaultLocale, initialScheduleItems }: Props) {
   const T = (k: string) => dt(k, locale)
+  const dl = defaultLocale ?? 'es'
+  const extraLocales = (locales ?? []).filter(l => l !== dl)
 
   const [heroElements, setHeroElements] = useState<HeroElement[]>(initialHeroElements)
+  const [wd, setWd] = useState<Record<string, any>>(initialWeddingDetails ?? {})
+  const [scheduleItems, setScheduleItems] = useState<ScheduleEvent[]>(initialScheduleItems ?? [])
+
+  const wdVal = (key: string): string => (wd[key] ?? '') as string
+  const setWdKey = (key: string, val: string) => { setWd(prev => ({ ...prev, [key]: val })); setSaved(false) }
+  const setWdLocale = (loc: string, key: string, val: string) => {
+    setWd(prev => ({
+      ...prev,
+      locale_content: {
+        ...((prev.locale_content as Record<string, any>) ?? {}),
+        [loc]: { ...(((prev.locale_content as Record<string, any>) ?? {})[loc] ?? {}), [key]: val },
+      },
+    }))
+    setSaved(false)
+  }
+  const wdLc = (loc: string, key: string): string => ((wd.locale_content as any)?.[loc]?.[key]) ?? ''
 
   const [sections, setSections] = useState<SectionRow[]>(() => {
     const existing = Object.fromEntries(initialSections.map(s => [s.section_key, s]))
@@ -724,7 +805,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
   async function handleSave() {
     setSaving(true); setError(''); setSaved(false)
     try {
-      const [res] = await Promise.all([
+      const results = await Promise.all([
         fetch('/api/dashboard/sections', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -741,6 +822,11 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
             visible: s.visible !== false,
           }))),
         }),
+        fetch('/api/dashboard/wedding-details', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(wd),
+        }),
         ...heroElements.map(el =>
           fetch(`/api/dashboard/hero-elements/${el.id}`, {
             method: 'PUT',
@@ -748,7 +834,15 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
             body: JSON.stringify(el),
           })
         ),
+        ...scheduleItems.map(item =>
+          fetch(`/api/dashboard/schedule/${item.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sort_order: item.sort_order, time_label: item.time_label, iso_time: item.iso_time, event_name: item.event_name, description: item.description, locale_content: item.locale_content ?? {} }),
+          })
+        ),
       ])
+      const res = results[0]
       if (res.ok) {
         const updated: SectionRow[] = await res.json()
         setSections(prev => prev.map(s => updated.find(u => u.section_key === s.section_key) ?? s))
@@ -790,6 +884,94 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+            {/* ── Wedding Info accordion ─────────────────────────────────── */}
+            <div style={{ border: '0.5px solid #e0d8c8', borderBottom: 'none', background: '#fff' }}>
+              <button
+                onClick={() => setOpenSection(openSection === 'wedding-info' ? null : 'wedding-info')}
+                style={{ width: '100%', background: openSection === 'wedding-info' ? '#faf7f2' : 'transparent', border: 'none', padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span style={{ ...th, fontSize: 11 }}>Wedding Info</span>
+                <span style={{ fontSize: 13, color: '#7a6e5f', transform: openSection === 'wedding-info' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▾</span>
+              </button>
+
+              {openSection === 'wedding-info' && (
+                <div style={{ padding: '0 14px 22px', background: '#faf7f2', borderTop: '0.5px solid #e0d8c8' }}>
+                  {/* Couple */}
+                  <div style={{ marginTop: 16, marginBottom: 14 }}>
+                    <p style={{ ...th, marginBottom: 8 }}>Couple</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingBrideName')}</label><input style={fieldStyle} value={wdVal('bride_name')} onChange={e => setWdKey('bride_name', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingGroomName')}</label><input style={fieldStyle} value={wdVal('groom_name')} onChange={e => setWdKey('groom_name', e.target.value)} /></div>
+                    </div>
+                  </div>
+
+                  {/* Event */}
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ ...th, marginBottom: 8 }}>Event</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingDate')}</label><input style={fieldStyle} type="date" value={wdVal('wedding_date')} onChange={e => setWdKey('wedding_date', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingRsvpDeadline')}</label><input style={fieldStyle} value={wdVal('rsvp_deadline')} onChange={e => setWdKey('rsvp_deadline', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingCeremonyTime')}</label><input style={fieldStyle} value={wdVal('ceremony_time')} onChange={e => setWdKey('ceremony_time', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingCeremonyLocation')}</label><input style={fieldStyle} value={wdVal('ceremony_location')} onChange={e => setWdKey('ceremony_location', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingReceptionTime')}</label><input style={fieldStyle} value={wdVal('reception_time')} onChange={e => setWdKey('reception_time', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingReceptionLocation')}</label><input style={fieldStyle} value={wdVal('reception_location')} onChange={e => setWdKey('reception_location', e.target.value)} /></div>
+                    </div>
+                  </div>
+
+                  {/* Coordinator */}
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ ...th, marginBottom: 8 }}>Coordinator</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingCoordName')}</label><input style={fieldStyle} value={wdVal('coordinator_name')} onChange={e => setWdKey('coordinator_name', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingCoordEmail')}</label><input style={fieldStyle} type="email" value={wdVal('coordinator_email')} onChange={e => setWdKey('coordinator_email', e.target.value)} /></div>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingNamesFontUrl')}</label>
+                      <input style={fieldStyle} value={wdVal('names_font_url')} onChange={e => setWdKey('names_font_url', e.target.value)} placeholder={T('weddingNamesFontUrlPh')} />
+                    </div>
+                  </div>
+
+                  {/* Letter (envelope gate) */}
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ ...th, marginBottom: 8 }}>Letter</p>
+                    <div style={{ marginBottom: 8, padding: '10px 12px', background: '#fff', border: '0.5px solid #e8e0d4', borderRadius: 2 }}>
+                      {extraLocales.length > 0 && <span style={{ display: 'inline-block', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#fff', background: '#b08d57', padding: '2px 6px', borderRadius: 2, marginBottom: 8 }}>{LOCALE_NAMES[dl] ?? dl} ({dl})</span>}
+                      <div style={{ marginBottom: 8 }}><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingLetterEyebrow')}</label><input style={fieldStyle} value={wdVal('letter_eyebrow')} onChange={e => setWdKey('letter_eyebrow', e.target.value)} /></div>
+                      <div style={{ marginBottom: 8 }}><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingLetterGreeting')}</label><input style={fieldStyle} value={wdVal('letter_greeting')} onChange={e => setWdKey('letter_greeting', e.target.value)} /></div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingLetterBody')}</label><textarea style={{ ...fieldStyle, resize: 'vertical', minHeight: 80 }} value={wdVal('letter_body_text')} onChange={e => setWdKey('letter_body_text', e.target.value)} /></div>
+                    </div>
+                    {extraLocales.map(xl => (
+                      <div key={xl} style={{ marginBottom: 8, padding: '10px 12px', background: '#fff', border: '0.5px solid #e8e0d4', borderRadius: 2 }}>
+                        <span style={{ display: 'inline-block', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#fff', background: '#b08d57', padding: '2px 6px', borderRadius: 2, marginBottom: 8 }}>{LOCALE_NAMES[xl] ?? xl} ({xl})</span>
+                        <div style={{ marginBottom: 8 }}><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingLetterEyebrow')}</label><input style={fieldStyle} value={wdLc(xl, 'letter_eyebrow')} onChange={e => setWdLocale(xl, 'letter_eyebrow', e.target.value)} /></div>
+                        <div style={{ marginBottom: 8 }}><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingLetterGreeting')}</label><input style={fieldStyle} value={wdLc(xl, 'letter_greeting')} onChange={e => setWdLocale(xl, 'letter_greeting', e.target.value)} /></div>
+                        <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingLetterBody')}</label><textarea style={{ ...fieldStyle, resize: 'vertical', minHeight: 80 }} value={wdLc(xl, 'letter_body_text')} onChange={e => setWdLocale(xl, 'letter_body_text', e.target.value)} /></div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Video */}
+                  <div>
+                    <p style={{ ...th, marginBottom: 8 }}>Video</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+                      <div>
+                        <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingVideoType')}</label>
+                        <select style={{ ...fieldStyle, cursor: 'pointer' }} value={wdVal('video_source_type')} onChange={e => setWdKey('video_source_type', e.target.value)}>
+                          <option value="">{T('weddingVideoNone')}</option>
+                          <option value="youtube">YouTube</option>
+                          <option value="vimeo">Vimeo</option>
+                          <option value="self">{T('weddingVideoSelf')}</option>
+                        </select>
+                      </div>
+                      <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingVideoId')}</label><input style={fieldStyle} value={wdVal('video_source_id')} onChange={e => setWdKey('video_source_id', e.target.value)} /></div>
+                      <div style={{ gridColumn: '1 / -1' }}><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingVideoPoster')}</label><input style={fieldStyle} value={wdVal('video_poster_url')} onChange={e => setWdKey('video_poster_url', e.target.value)} /></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {sections.map((section, idx) => {
               const key = section.section_key
               const allDesigns = SECTION_DESIGNS[key as SectionKey] ?? []
@@ -1028,6 +1210,20 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                         </div>
                       )}
 
+                      {/* Events (schedule only) */}
+                      {key === 'schedule' && (
+                        <div style={{ marginTop: 20 }}>
+                          <p style={{ ...th, marginBottom: 10 }}>{T('scheduleTitle')}</p>
+                          <AgendaPanel
+                            items={scheduleItems}
+                            onItemsChange={setScheduleItems}
+                            locales={locales}
+                            defaultLocale={defaultLocale}
+                            locale={locale}
+                          />
+                        </div>
+                      )}
+
                     </div>
                   )}
                 </div>
@@ -1080,7 +1276,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                 >
                   <SectionTheme sectionCfg={{ colorScheme: section.color_scheme, fontColor: section.font_color ?? '' }}>
                     <PreviewFadeIn section={section}>
-                      {renderPreviewSection(section.section_key, section, weddingDetails, heroElements)}
+                      {renderPreviewSection(section.section_key, section, wd, heroElements, scheduleItems)}
                     </PreviewFadeIn>
                   </SectionTheme>
                 </div>

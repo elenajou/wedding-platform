@@ -93,8 +93,8 @@ export default function NewWeddingPage() {
     }
   }
 
-  const fieldStyle = { width: '100%', boxSizing: 'border-box' as const, padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '0.5px solid #3a3530', fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 300, color: '#f4efe5', outline: 'none' }
-  const labelStyle = { display: 'block' as const, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#6b6046', marginBottom: 4 }
+  const fieldStyle = { width: '100%', boxSizing: 'border-box' as const, padding: '8px 0', background: 'transparent', border: 'none', borderBottom: '0.5px solid #d4cbbf', fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 300, color: '#201d19', outline: 'none' }
+  const labelStyle = { display: 'block' as const, fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#7a6e5f', marginBottom: 4 }
   const checkboxRow = { display: 'flex' as const, alignItems: 'center' as const, gap: 8, marginBottom: 8 }
 
   const features: [string, string][] = [
@@ -111,11 +111,11 @@ export default function NewWeddingPage() {
   ]
 
   return (
-    <main style={{ minHeight: '100svh', background: '#1e1a16', fontFamily: "'EB Garamond', serif", padding: '2rem' }}>
+    <main style={{ minHeight: '100svh', background: '#faf7f2', fontFamily: "'EB Garamond', serif", padding: '2rem' }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <a href="/super-admin" style={{ color: '#6b6046', fontSize: 12, textDecoration: 'none' }}>← Back</a>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontStyle: 'italic', fontWeight: 300, color: '#f4efe5' }}>
+          <a href="/super-admin" style={{ color: '#7a6e5f', fontSize: 12, textDecoration: 'none' }}>← Back</a>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontStyle: 'italic', fontWeight: 300, color: '#201d19' }}>
             New Wedding
           </h1>
         </div>
@@ -155,7 +155,7 @@ export default function NewWeddingPage() {
                       onChange={e => toggleLocale(code, e.target.checked)}
                       style={{ accentColor: '#b08d57' }}
                     />
-                    <span style={{ fontSize: 14, color: '#c4b89a' }}>{label} <span style={{ fontSize: 11, color: '#6b6046' }}>({code})</span></span>
+                    <span style={{ fontSize: 14, color: '#4b4331' }}>{label} <span style={{ fontSize: 11, color: '#7a6e5f' }}>({code})</span></span>
                   </label>
                 )
               })}
@@ -178,7 +178,7 @@ export default function NewWeddingPage() {
                     onChange={e => set(key, e.target.checked)}
                     style={{ accentColor: '#b08d57' }}
                   />
-                  <span style={{ fontSize: 14, color: '#c4b89a' }}>{label}</span>
+                  <span style={{ fontSize: 14, color: '#4b4331' }}>{label}</span>
                 </label>
               ))}
             </div>
@@ -189,7 +189,7 @@ export default function NewWeddingPage() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', padding: 13, background: '#b08d57', color: '#1e1a16', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1 }}
+            style={{ width: '100%', padding: 13, background: '#b08d57', color: '#ffffff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 12, letterSpacing: '0.26em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: loading ? 0.5 : 1 }}
           >
             {loading ? 'Creating...' : 'Create Wedding'}
           </button>

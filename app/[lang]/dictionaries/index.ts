@@ -7,11 +7,13 @@ import {
   getWeddingFAQ,
   getWeddingPhotos,
   getWeddingLocations,
+  getWeddingDressCode,
   getSectionConfig,
   getHeroElements,
   type WeddingDetails,
   type SectionConfigMap,
   type LocationItem,
+  type DressCodeItem,
   type HeroElement,
 } from '@/lib/wedding-data'
 
@@ -48,6 +50,7 @@ export type WeddingDetailsClient = {
   letterBodyText: string | null
   sections: SectionConfigMap
   locations: LocationItem[]
+  dressCodeItems: DressCodeItem[]
   heroElements: HeroElement[]
 }
 
@@ -117,13 +120,14 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
 }> {
   const weddingId = await getWeddingId()
 
-  const [staticDict, details, schedule, faq, photos, locations, sections, heroElements] = await Promise.all([
+  const [staticDict, details, schedule, faq, photos, locations, dressCodeItems, sections, heroElements] = await Promise.all([
     getDictionary(locale),
     getWeddingDetails(weddingId),
     getWeddingSchedule(weddingId),
     getWeddingFAQ(weddingId),
     getWeddingPhotos(weddingId),
     getWeddingLocations(weddingId),
+    getWeddingDressCode(weddingId),
     getSectionConfig(weddingId),
     getHeroElements(weddingId),
   ])
@@ -170,6 +174,7 @@ export async function getDictionaryWithData(locale: Locale): Promise<{
     letterBodyText: lc.letter_body_text ?? details.letter_body_text ?? null,
     sections,
     locations,
+    dressCodeItems,
     heroElements,
   }
 

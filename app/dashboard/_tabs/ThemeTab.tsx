@@ -6,6 +6,7 @@ import { SECTION_DESIGNS, type SectionKey } from '@/themes/section-designs'
 import { getAllColorSchemes, getColorScheme } from '@/themes/color-schemes'
 import type { HeroElement, HeroElementType } from '@/lib/wedding-data'
 import FontPicker from '@/app/dashboard/_FontPicker'
+import ImageUploader from '@/app/dashboard/_ImageUploader'
 import TemplatePreview from './_TemplatePreview'
 import SectionTheme from '@/components/SectionTheme'
 import InvitationHero from '@/components/InvitationHero'
@@ -30,6 +31,7 @@ type SectionRow = {
   background_color: string | null
   font_color: string | null
   overlay_opacity: number
+  contrast: number
   sort_order: number
   visible: boolean
 }
@@ -67,30 +69,44 @@ const PREVIEW_H = Math.round(PHONE_H * SCALE)
 
 // ── Preview FadeIn (no animations — shows immediately for the live panel) ────
 
-function PreviewFadeIn({ section, children }: { section: SectionRow; children: React.ReactNode }) {
-  const style: React.CSSProperties & Record<string, string> = {
-    width: '100%',
-    backgroundColor: section.background_color ?? 'var(--color-background)',
-  }
-  if (section.background_url) {
-    style.backgroundImage = `url(${section.background_url})`
-    style.backgroundSize = 'cover'
-    style.backgroundPosition = 'center'
-    style.position = 'relative'
-  }
-  if (section.font_color) style['--section-color'] = section.font_color
+// heroManagesOwnBg: designs that render backgroundUrl internally as a CSS background-image.
+// For these, PreviewFadeIn must NOT add its own background layer (it would be hidden anyway
+// since the component's section element is opaque, but skipping it avoids any contrast/overlay
+// double-application on the rare case the layout changes).
+// Only Fullscreen and SplitLayout render backgroundUrl as a CSS background-image on their root
+// element (solid-color fallback otherwise). Classic/Minimal/Floral are transparent or use
+// var(--color-background), so PreviewFadeIn's absolute <img> layer shows through them.
+const HERO_MANAGES_BG = new Set(['Fullscreen', 'SplitLayout'])
 
+function PreviewFadeIn({ section, children }: { section: SectionRow; children: React.ReactNode }) {
+  // Hero templates own their background — skip the layer entirely for hero.
+  const skipBgLayer = section.section_key === 'hero' && HERO_MANAGES_BG.has(section.design)
+  const hasBg = !skipBgLayer && !!section.background_url
+  const cssVars = section.font_color ? { '--section-color': section.font_color } as React.CSSProperties : {}
   return (
-    <div style={style}>
-      {section.background_url && (
+    <div style={{
+      width: '100%', position: hasBg ? 'relative' : undefined,
+      backgroundColor: skipBgLayer ? undefined : (section.background_color ?? 'var(--color-background)'),
+      ...cssVars,
+    }}>
+      {hasBg && <>
+        <img
+          src={section.background_url!}
+          aria-hidden
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover', display: 'block', zIndex: 0,
+            filter: `contrast(${section.contrast ?? 100}%)`,
+          }}
+        />
         <div style={{
-          position: 'absolute', inset: 0, zIndex: 0,
+          position: 'absolute', inset: 0, zIndex: 1,
           background: section.overlay_opacity >= 0
             ? `rgba(0,0,0,${section.overlay_opacity})`
             : `rgba(255,255,255,${Math.abs(section.overlay_opacity)})`,
         }} />
-      )}
-      <div style={section.background_url ? { position: 'relative', zIndex: 1, width: '100%' } : { width: '100%' }}>
+      </>}
+      <div style={hasBg ? { position: 'relative', zIndex: 2, width: '100%' } : { width: '100%' }}>
         {children}
       </div>
     </div>
@@ -518,9 +534,10 @@ const ELEMENT_TYPE_LABELS: Record<HeroElementType, string> = {
   body: 'Body',
   tagline: 'Tagline',
   date: 'Date',
+  spacer: 'Spacer',
 }
 
-const HERO_ELEMENT_TYPES: HeroElementType[] = ['eyebrow', 'names', 'greeting', 'body', 'tagline', 'date']
+const HERO_ELEMENT_TYPES: HeroElementType[] = ['eyebrow', 'names', 'greeting', 'body', 'tagline', 'date', 'spacer']
 
 function HeroElementsPanel({
   elements,
@@ -633,33 +650,47 @@ function HeroElementsPanel({
           <span style={{ fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#b08d57', fontFamily: "'EB Garamond', serif", whiteSpace: 'nowrap', width: 48, flexShrink: 0 }}>
             {ELEMENT_TYPE_LABELS[el.element_type as HeroElementType] ?? el.element_type}
           </span>
-          {/* Content */}
-          {el.element_type !== 'names' ? (
-            activeLang === dl ? (
-              <input style={{ ...compactInput, flex: 1, minWidth: 60 }} value={el.content} onChange={e => updateEl(el.id, { content: e.target.value })} placeholder="content" />
-            ) : (
-              <input style={{ ...compactInput, flex: 1, minWidth: 60 }} value={el.locale_content?.[activeLang] ?? ''} onChange={e => updateLocaleContent(el.id, activeLang, e.target.value)} placeholder={`${activeLang} content`} />
-            )
+          {/* Content / spacer controls */}
+          {el.element_type === 'spacer' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1 }}>
+              <span style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>Height</span>
+              <div style={{ display: 'flex', alignItems: 'center', border: '0.5px solid #d4cbbf', borderRadius: 1, overflow: 'hidden', height: 24 }}>
+                <button type="button" onClick={() => updateEl(el.id, { content: String(Math.max(0, (parseInt(el.content) || 40) - 8)) })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9a9080', fontSize: 9, padding: '0 5px', height: 24, lineHeight: 1 }}>−</button>
+                <input
+                  style={{ width: 36, padding: '0 2px', background: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, color: '#201d19', outline: 'none', textAlign: 'center', height: 24, boxSizing: 'border-box' }}
+                  value={el.content || '40'}
+                  onChange={e => updateEl(el.id, { content: e.target.value.replace(/\D/g, '') })}
+                />
+                <button type="button" onClick={() => updateEl(el.id, { content: String((parseInt(el.content) || 40) + 8) })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9a9080', fontSize: 9, padding: '0 5px', height: 24, lineHeight: 1 }}>+</button>
+              </div>
+              <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>px</span>
+            </div>
           ) : (
-            <span style={{ flex: 1, fontSize: 11, color: '#9a9080', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>auto</span>
+            <>
+              {activeLang === dl ? (
+                <input style={{ ...compactInput, flex: 1, minWidth: 60 }} value={el.content} onChange={e => updateEl(el.id, { content: e.target.value })} placeholder={el.element_type === 'names' ? 'e.g. Elena & Marco' : 'content'} />
+              ) : (
+                <input style={{ ...compactInput, flex: 1, minWidth: 60 }} value={el.locale_content?.[activeLang] ?? ''} onChange={e => updateLocaleContent(el.id, activeLang, e.target.value)} placeholder={`${activeLang} content`} />
+              )}
+              {/* FontPicker — 300px fixed, shrinks last */}
+              <div style={{ width: 300, flexShrink: 0 }}>
+                <FontPicker
+                  value={el.font_family}
+                  onChange={v => updateEl(el.id, { font_family: v })}
+                  color={el.font_color || '#ffffff'}
+                  onColorChange={v => updateEl(el.id, { font_color: v })}
+                  size={el.font_size ?? ''}
+                  onSizeChange={v => updateEl(el.id, { font_size: v })}
+                  letterSpacing={el.letter_spacing ?? ''}
+                  onLetterSpacingChange={v => updateEl(el.id, { letter_spacing: v })}
+                  italic={el.font_style === 'italic'}
+                  onItalicChange={v => updateEl(el.id, { font_style: v ? 'italic' : 'normal' })}
+                  bold={el.font_weight === '700'}
+                  onBoldChange={v => updateEl(el.id, { font_weight: v ? '700' : '400' })}
+                />
+              </div>
+            </>
           )}
-          {/* FontPicker — 300px fixed, shrinks last */}
-          <div style={{ width: 300, flexShrink: 0 }}>
-            <FontPicker
-              value={el.font_family}
-              onChange={v => updateEl(el.id, { font_family: v })}
-              color={el.font_color || '#ffffff'}
-              onColorChange={v => updateEl(el.id, { font_color: v })}
-              size={el.font_size ?? ''}
-              onSizeChange={v => updateEl(el.id, { font_size: v })}
-              letterSpacing={el.letter_spacing ?? ''}
-              onLetterSpacingChange={v => updateEl(el.id, { letter_spacing: v })}
-              italic={el.font_style === 'italic'}
-              onItalicChange={v => updateEl(el.id, { font_style: v ? 'italic' : 'normal' })}
-              bold={el.font_weight === '700'}
-              onBoldChange={v => updateEl(el.id, { font_weight: v ? '700' : '400' })}
-            />
-          </div>
           {/* Visible */}
           <label style={{ display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
             <input type="checkbox" checked={el.visible !== false} onChange={e => updateEl(el.id, { visible: e.target.checked })} style={{ accentColor: '#b08d57', width: 11, height: 11 }} />
@@ -710,7 +741,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
   const [scheduleItems, setScheduleItems] = useState<ScheduleEvent[]>(initialScheduleItems ?? [])
 
   const wdVal = (key: string): string => (wd[key] ?? '') as string
-  const setWdKey = (key: string, val: string) => { setWd(prev => ({ ...prev, [key]: val })); setSaved(false) }
+  const setWdKey = (key: string, val: string) => { setWd(prev => ({ ...prev, [key]: val })) }
   const setWdLocale = (loc: string, key: string, val: string) => {
     setWd(prev => ({
       ...prev,
@@ -719,7 +750,6 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
         [loc]: { ...(((prev.locale_content as Record<string, any>) ?? {})[loc] ?? {}), [key]: val },
       },
     }))
-    setSaved(false)
   }
   const wdLc = (loc: string, key: string): string => ((wd.locale_content as any)?.[loc]?.[key]) ?? ''
 
@@ -729,7 +759,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
       .map(key => existing[key] ?? {
         id: null, section_key: key, design: 'Classic', color_scheme: 'Gold',
         background_url: null, background_color: null, font_color: null,
-        overlay_opacity: 0.32, sort_order: 99, visible: true,
+        overlay_opacity: 0.32, contrast: 100, sort_order: 99, visible: true,
       })
       .sort((a, b) => {
         if (a.section_key === 'envelope') return -1
@@ -737,10 +767,18 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
         return a.sort_order - b.sort_order
       })
   })
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('')
+  const [sectionSaving, setSectionSaving] = useState<Record<string, boolean>>({})
+  const [sectionSaved, setSectionSaved] = useState<Record<string, boolean>>({})
+  const [sectionError, setSectionError] = useState<Record<string, string>>({})
+  const [wdSaving, setWdSaving] = useState(false)
+  const [wdSaved, setWdSaved] = useState(false)
+  const [wdError, setWdError] = useState('')
   const [openSection, setOpenSection] = useState<string | null>(activeSectionKeys[0] ?? null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme-open-section')
+    if (stored && (stored === 'wedding-info' || activeSectionKeys.includes(stored))) setOpenSection(stored)
+  }, [])
 
   const previewContainerRef = useRef<HTMLDivElement>(null)
   const sectionElRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -778,9 +816,14 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
     previewContainerRef.current.scrollTop = dragStartScrollTop.current - (e.clientY - dragStartY.current)
   }
 
+  function openAccordion(key: string | null) {
+    setOpenSection(key)
+    if (key) localStorage.setItem('theme-open-section', key)
+    else localStorage.removeItem('theme-open-section')
+  }
+
   function update(key: string, patch: Partial<SectionRow>) {
     setSections(prev => prev.map(s => s.section_key === key ? { ...s, ...patch } : s))
-    setSaved(false)
   }
 
   function moveSection(key: string, dir: -1 | 1) {
@@ -794,84 +837,72 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
       ;[arr[idx], arr[next]] = [arr[next], arr[idx]]
       return arr.map((s, i) => ({ ...s, sort_order: i * 10 }))
     })
-    setSaved(false)
   }
 
   function toggleVisible(key: string) {
     setSections(prev => prev.map(s => s.section_key === key ? { ...s, visible: !s.visible } : s))
-    setSaved(false)
   }
 
-  async function handleSave() {
-    setSaving(true); setError(''); setSaved(false)
+  async function saveSection(key: string) {
+    const section = sections.find(s => s.section_key === key)
+    if (!section) return
+    setSectionSaving(p => ({ ...p, [key]: true }))
+    setSectionError(p => ({ ...p, [key]: '' }))
     try {
-      const results = await Promise.all([
+      const promises: Promise<Response>[] = [
         fetch('/api/dashboard/sections', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sections.map(s => ({
-            id: s.id,
-            section_key: s.section_key,
-            design: s.design,
-            color_scheme: s.color_scheme,
-            background_url: s.background_url || null,
-            background_color: s.background_color || null,
-            font_color: s.font_color || null,
-            overlay_opacity: s.overlay_opacity,
-            sort_order: s.sort_order,
-            visible: s.visible !== false,
-          }))),
+          body: JSON.stringify([{
+            id: section.id, section_key: section.section_key,
+            design: section.design, color_scheme: section.color_scheme,
+            background_url: section.background_url || null,
+            background_color: section.background_color || null,
+            font_color: section.font_color || null,
+            overlay_opacity: section.overlay_opacity,
+            contrast: section.contrast ?? 100,
+            sort_order: section.sort_order, visible: section.visible !== false,
+          }]),
         }),
-        fetch('/api/dashboard/wedding-details', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(wd),
-        }),
-        ...heroElements.map(el =>
-          fetch(`/api/dashboard/hero-elements/${el.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(el),
-          })
-        ),
-        ...scheduleItems.map(item =>
-          fetch(`/api/dashboard/schedule/${item.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sort_order: item.sort_order, time_label: item.time_label, iso_time: item.iso_time, event_name: item.event_name, description: item.description, locale_content: item.locale_content ?? {} }),
-          })
-        ),
-      ])
-      const res = results[0]
-      if (res.ok) {
-        const updated: SectionRow[] = await res.json()
-        setSections(prev => prev.map(s => updated.find(u => u.section_key === s.section_key) ?? s))
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
-      } else {
-        const d = await res.json(); setError(d.error ?? 'Error al guardar')
-      }
-    } catch { setError('Error de red') } finally { setSaving(false) }
+        ...(key === 'hero' ? heroElements.map(el =>
+          fetch(`/api/dashboard/hero-elements/${el.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(el) })
+        ) : []),
+        ...(key === 'schedule' ? scheduleItems.map(item =>
+          fetch(`/api/dashboard/schedule/${item.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sort_order: item.sort_order, time_label: item.time_label, iso_time: item.iso_time, event_name: item.event_name, description: item.description, locale_content: item.locale_content ?? {} }) })
+        ) : []),
+      ]
+      const [sectRes] = await Promise.all(promises)
+      if (!sectRes.ok) { const d = await sectRes.json(); throw new Error(d.error ?? 'Error') }
+      const updated: SectionRow[] = await sectRes.json()
+      setSections(prev => prev.map(s => updated.find(u => u.section_key === s.section_key) ?? s))
+      setSectionSaved(p => ({ ...p, [key]: true }))
+      setTimeout(() => setSectionSaved(p => ({ ...p, [key]: false })), 2500)
+    } catch (e) {
+      setSectionError(p => ({ ...p, [key]: e instanceof Error ? e.message : 'Error' }))
+    } finally {
+      setSectionSaving(p => ({ ...p, [key]: false }))
+    }
+  }
+
+  async function saveWeddingInfo() {
+    setWdSaving(true); setWdError('')
+    try {
+      const res = await fetch('/api/dashboard/wedding-details', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(wd) })
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? 'Error') }
+      setWdSaved(true)
+      setTimeout(() => setWdSaved(false), 2500)
+    } catch (e) {
+      setWdError(e instanceof Error ? e.message : 'Error')
+    } finally { setWdSaving(false) }
   }
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem' }}>
+      <div style={{ marginBottom: '1rem' }}>
         <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontStyle: 'italic', fontWeight: 300, color: '#201d19' }}>
           {T('themeTitle')}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          {saved && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{T('savedShort')}</span>}
-          {error && <span style={{ fontSize: 12, color: '#c4614a', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{error}</span>}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{ padding: '7px 18px', background: '#b08d57', color: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: saving ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: saving ? 0.6 : 1 }}
-          >
-            {saving ? T('saving') : T('save')}
-          </button>
-        </div>
       </div>
 
       {/* Two-column layout */}
@@ -888,7 +919,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
             {/* ── Wedding Info accordion ─────────────────────────────────── */}
             <div style={{ border: '0.5px solid #e0d8c8', borderBottom: 'none', background: '#fff' }}>
               <button
-                onClick={() => setOpenSection(openSection === 'wedding-info' ? null : 'wedding-info')}
+                onClick={() => openAccordion(openSection === 'wedding-info' ? null : 'wedding-info')}
                 style={{ width: '100%', background: openSection === 'wedding-info' ? '#faf7f2' : 'transparent', border: 'none', padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left' }}
               >
                 <span style={{ ...th, fontSize: 11 }}>Wedding Info</span>
@@ -965,8 +996,29 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                         </select>
                       </div>
                       <div><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingVideoId')}</label><input style={fieldStyle} value={wdVal('video_source_id')} onChange={e => setWdKey('video_source_id', e.target.value)} /></div>
-                      <div style={{ gridColumn: '1 / -1' }}><label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 3 }}>{T('weddingVideoPoster')}</label><input style={fieldStyle} value={wdVal('video_poster_url')} onChange={e => setWdKey('video_poster_url', e.target.value)} /></div>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <ImageUploader
+                          value={wdVal('video_poster_url')}
+                          onChange={v => {
+                            setWdKey('video_poster_url', v)
+                            fetch('/api/dashboard/wedding-details', {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ ...wd, video_poster_url: v }),
+                            })
+                          }}
+                          fieldKey="video-poster"
+                          label={T('weddingVideoPoster')}
+                        />
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Save */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, paddingTop: 12, borderTop: '0.5px solid #e0d8c8' }}>
+                    {wdSaved && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{T('savedShort')}</span>}
+                    {wdError && <span style={{ fontSize: 12, color: '#c4614a', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{wdError}</span>}
+                    <button onClick={saveWeddingInfo} disabled={wdSaving} style={{ padding: '7px 18px', background: '#b08d57', color: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: wdSaving ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: wdSaving ? 0.6 : 1 }}>{wdSaving ? T('saving') : T('save')}</button>
                   </div>
                 </div>
               )}
@@ -1017,7 +1069,7 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
 
                     {/* Accordion toggle */}
                     <button
-                      onClick={() => setOpenSection(isOpen ? null : key)}
+                      onClick={() => openAccordion(isOpen ? null : key)}
                       style={{
                         flex: 1, background: 'transparent', border: 'none', padding: '11px 14px',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1127,36 +1179,29 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                         <p style={{ ...th, marginBottom: 10 }}>{T('themeBackground')}</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-                          <div>
-                            <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeBgUrl')}</label>
-                            <input
-                              type="url"
-                              placeholder="https://images.unsplash.com/…"
-                              value={section.background_url ?? ''}
-                              onChange={e => update(key, { background_url: e.target.value || null })}
-                              style={fieldStyle}
-                            />
-                          </div>
+                          <ImageUploader
+                            value={section.background_url ?? ''}
+                            onChange={v => {
+                              const url = v || null
+                              update(key, { background_url: url })
+                              const s = sections.find(sec => sec.section_key === key)
+                              if (s) fetch('/api/dashboard/sections', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify([{ ...s, background_url: url }]),
+                              })
+                            }}
+                            fieldKey={`section-${key}-background`}
+                            label={T('themeBgUrl')}
+                            opacity={section.overlay_opacity}
+                            onOpacityChange={v => update(key, { overlay_opacity: v })}
+                            contrast={section.contrast ?? 100}
+                            onContrastChange={v => update(key, { contrast: v })}
+                            bgColor={section.background_color ?? ''}
+                            onBgColorChange={v => update(key, { background_color: v || null })}
+                          />
 
                           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                            <div>
-                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeBgColor')}</label>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                                <input
-                                  type="color"
-                                  value={section.background_color ?? '#faf7f2'}
-                                  onChange={e => update(key, { background_color: e.target.value })}
-                                  style={{ width: 30, height: 24, cursor: 'pointer', border: '0.5px solid #d4cbbf', borderRadius: 2, padding: 2, background: 'none' }}
-                                />
-                                <span style={{ fontSize: 12, fontFamily: "'EB Garamond', serif", color: '#201d19' }}>
-                                  {section.background_color ?? T('none')}
-                                </span>
-                                {section.background_color && (
-                                  <button onClick={() => update(key, { background_color: null })} style={{ fontSize: 11, color: '#7a6e5f', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: "'EB Garamond', serif", textDecoration: 'underline' }}>{T('clear')}</button>
-                                )}
-                              </div>
-                            </div>
-
                             {key !== 'hero' && (
                             <div>
                               <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 4 }}>{T('themeFontColor')}</label>
@@ -1177,25 +1222,6 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                             </div>
                             )}
                           </div>
-
-                          {hasCustomBg && (
-                            <div>
-                              <label style={{ ...th, fontSize: 9, display: 'block', marginBottom: 5 }}>
-                                {T('themeOverlay')} — {Math.round(section.overlay_opacity * 100)}%
-                              </label>
-                              <input
-                                type="range"
-                                min={0} max={1} step={0.01}
-                                value={section.overlay_opacity}
-                                onChange={e => update(key, { overlay_opacity: parseFloat(e.target.value) })}
-                                style={{ width: '100%', accentColor: '#b08d57' }}
-                              />
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                                <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>Ninguna</span>
-                                <span style={{ fontSize: 10, color: '#9a9080', fontFamily: "'EB Garamond', serif" }}>Completa</span>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -1223,6 +1249,13 @@ export default function ThemeTab({ initialSections, enabledDesigns, activeSectio
                           />
                         </div>
                       )}
+
+                      {/* Per-section Save */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 20, paddingTop: 12, borderTop: '0.5px solid #e0d8c8' }}>
+                        {sectionSaved[key] && <span style={{ fontSize: 12, color: '#2d6a40', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{T('savedShort')}</span>}
+                        {sectionError[key] && <span style={{ fontSize: 12, color: '#c4614a', fontStyle: 'italic', fontFamily: "'EB Garamond', serif" }}>{sectionError[key]}</span>}
+                        <button onClick={() => saveSection(key)} disabled={!!sectionSaving[key]} style={{ padding: '7px 18px', background: '#b08d57', color: '#fff', border: 'none', fontFamily: "'EB Garamond', serif", fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: sectionSaving[key] ? 'not-allowed' : 'pointer', borderRadius: 1, opacity: sectionSaving[key] ? 0.6 : 1 }}>{sectionSaving[key] ? T('saving') : T('save')}</button>
+                      </div>
 
                     </div>
                   )}

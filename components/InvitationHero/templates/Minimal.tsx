@@ -32,12 +32,14 @@ export default function Minimal({
                 {getContent(el, locale, dict.weddingDate)}
               </p>
             )
-          case 'names':
+          case 'names': {
+            const namesText = getContent(el, locale, `${brideName} & ${groomName}`)
             return (
               <h1 key={el.id} style={{ fontSize: 'clamp(2.6rem, 8vw, 5rem)', fontWeight: 300, lineHeight: 1.1, fontFamily: "'EB Garamond', serif", color: 'var(--color-text)', margin: '0.5rem 0 1.5rem', ...elStyle(el) }}>
-                {brideName} &amp; {groomName}
+                {namesText}
               </h1>
             )
+          }
           case 'eyebrow':
             return (
               <p key={el.id} style={{ fontSize: 14, letterSpacing: '0.18em', color: 'var(--color-primary)', marginBottom: '1.5rem', ...elStyle(el) }}>
@@ -78,6 +80,8 @@ export default function Minimal({
                 {getContent(el, locale, dict.tagline)}
               </p>
             )
+          case 'spacer':
+            return <div key={el.id} style={{ height: parseInt(el.content) > 0 ? `${el.content}px` : '40px' }} aria-hidden />
           default:
             return null
         }

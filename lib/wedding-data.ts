@@ -169,7 +169,7 @@ export async function getWeddingLocations(weddingId: string): Promise<LocationIt
   return rows as LocationItem[]
 }
 
-export type HeroElementType = 'eyebrow' | 'names' | 'greeting' | 'body' | 'tagline' | 'date'
+export type HeroElementType = 'eyebrow' | 'names' | 'greeting' | 'body' | 'tagline' | 'date' | 'spacer'
 
 export type HeroElement = {
   id: string

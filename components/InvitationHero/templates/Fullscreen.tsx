@@ -37,15 +37,16 @@ export default function Fullscreen({
                   {getContent(el, locale, dict.eyebrow)}
                 </p>
               )
-            case 'names':
+            case 'names': {
+              const namesText = getContent(el, locale, `${brideName} & ${groomName}`)
               return (
                 <React.Fragment key={el.id}>
                   <h1 style={{ fontSize: 'clamp(3rem, 10vw, 6rem)', fontWeight: 300, lineHeight: 1.05, fontFamily: "'EB Garamond', serif", color: '#fff', margin: '0 0 0.8rem', textShadow: '0 2px 16px rgba(0,0,0,0.4)', ...elStyle(el) }}>
-                    {brideName} &amp; {groomName}
+                    {namesText}
                   </h1>
-                  <div style={{ width: 60, height: 1, background: 'rgba(255,255,255,0.5)', margin: '0 auto 1.2rem' }} />
                 </React.Fragment>
               )
+            }
             case 'greeting': {
               const prefix = getContent(el, locale, '')
               let content: React.ReactNode
@@ -86,6 +87,8 @@ export default function Fullscreen({
                   {getContent(el, locale, dict.weddingDate)}
                 </p>
               )
+            case 'spacer':
+              return <div key={el.id} style={{ height: parseInt(el.content) > 0 ? `${el.content}px` : '40px' }} aria-hidden />
             default:
               return null
           }

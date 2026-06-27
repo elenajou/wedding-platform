@@ -32,14 +32,16 @@ export default function Classic({
                 {getContent(el, locale, dict.eyebrow)}
               </p>
             )
-          case 'names':
+          case 'names': {
+            const namesText = getContent(el, locale, `${brideName} & ${groomName}`)
             return (
               <div key={el.id} className={styles.namesWrap}>
                 <h1 className={styles.names} style={elStyle(el)}>
-                  {brideName} <span className={styles.amp}>&amp;</span> {groomName}
+                  {namesText}
                 </h1>
               </div>
             )
+          }
           case 'greeting': {
             const prefix = getContent(el, locale, '')
             let greetingContent: React.ReactNode
@@ -80,16 +82,13 @@ export default function Classic({
                 {getContent(el, locale, dict.weddingDate)}
               </div>
             )
+          case 'spacer':
+            return <div key={el.id} style={{ height: parseInt(el.content) > 0 ? `${el.content}px` : '40px' }} aria-hidden />
           default:
             return null
         }
       })}
 
-      <div className={styles.ornament}>
-        <div className={styles.ornamentLine} />
-        <div className={styles.ornamentDiamond} />
-        <div className={styles.ornamentLine} />
-      </div>
     </section>
   )
 }

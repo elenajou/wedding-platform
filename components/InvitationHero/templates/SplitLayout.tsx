@@ -34,17 +34,16 @@ export default function SplitLayout({
                   {getContent(el, locale, dict.eyebrow)}
                 </p>
               )
-            case 'names':
+            case 'names': {
+              const namesText = getContent(el, locale, `${brideName} & ${groomName}`)
               return (
                 <React.Fragment key={el.id}>
                   <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.8rem)', fontWeight: 300, lineHeight: 1.1, fontFamily: "'EB Garamond', serif", color: 'var(--color-text)', margin: '0 0 0.8rem', ...elStyle(el) }}>
-                    {brideName}<br />
-                    <span style={{ fontSize: '0.7em', color: 'var(--color-primary)' }}>&amp;</span><br />
-                    {groomName}
+                    {namesText}
                   </h1>
-                  <div style={{ width: 48, height: '0.5px', background: 'var(--color-border)', marginBottom: '1.2rem' }} />
                 </React.Fragment>
               )
+            }
             case 'greeting': {
               const prefix = getContent(el, locale, '')
               let content: React.ReactNode
@@ -85,6 +84,8 @@ export default function SplitLayout({
                   {getContent(el, locale, dict.weddingDate)}
                 </p>
               )
+            case 'spacer':
+              return <div key={el.id} style={{ height: parseInt(el.content) > 0 ? `${el.content}px` : '40px' }} aria-hidden />
             default:
               return null
           }

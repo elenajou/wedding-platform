@@ -56,7 +56,8 @@ export default function Floral({
                   {getContent(el, locale, dict.eyebrow)}
                 </p>
               )
-            case 'names':
+            case 'names': {
+              const namesText = getContent(el, locale, `${brideName} & ${groomName}`)
               return (
                 <React.Fragment key={el.id}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: '1rem' }}>
@@ -65,7 +66,7 @@ export default function Floral({
                     <div style={{ flex: 1, height: '0.5px', background: 'var(--color-border)' }} />
                   </div>
                   <h1 style={{ fontSize: 'clamp(2.6rem, 8vw, 5rem)', fontWeight: 300, lineHeight: 1.1, fontFamily: "'EB Garamond', serif", color: 'var(--color-text)', margin: '0 0 0.6rem', ...elStyle(el) }}>
-                    {brideName} &amp; {groomName}
+                    {namesText}
                   </h1>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, margin: '0.8rem 0' }}>
                     <div style={{ flex: 1, height: '0.5px', background: 'var(--color-border)' }} />
@@ -74,6 +75,7 @@ export default function Floral({
                   </div>
                 </React.Fragment>
               )
+            }
             case 'greeting': {
               const prefix = getContent(el, locale, '')
               let content: React.ReactNode
@@ -114,6 +116,8 @@ export default function Floral({
                   {getContent(el, locale, dict.weddingDate)}
                 </p>
               )
+            case 'spacer':
+              return <div key={el.id} style={{ height: parseInt(el.content) > 0 ? `${el.content}px` : '40px' }} aria-hidden />
             default:
               return null
           }

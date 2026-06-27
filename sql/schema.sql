@@ -74,6 +74,7 @@ CREATE TABLE section_config (
   background_color text,
   font_color      text,
   overlay_opacity numeric NOT NULL DEFAULT 0.32,
+  contrast        integer NOT NULL DEFAULT 100,
   sort_order      integer NOT NULL DEFAULT 0,
   visible         boolean NOT NULL DEFAULT true,
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -179,9 +180,19 @@ CREATE TABLE IF NOT EXISTS wedding_locations (
   maps_link   text NOT NULL DEFAULT '',
   waze_link   text NOT NULL DEFAULT '',
   embed_url        text NOT NULL DEFAULT '',
-  font_title       text NOT NULL DEFAULT '',
-  font_description text NOT NULL DEFAULT '',
-  created_at       timestamptz NOT NULL DEFAULT now()
+  font_title            text NOT NULL DEFAULT '',
+  font_description      text NOT NULL DEFAULT '',
+  color_title           text NOT NULL DEFAULT '',
+  color_description     text NOT NULL DEFAULT '',
+  size_title            text NOT NULL DEFAULT '',
+  size_description      text NOT NULL DEFAULT '',
+  spacing_title         text NOT NULL DEFAULT '',
+  spacing_description   text NOT NULL DEFAULT '',
+  italic_title          boolean NOT NULL DEFAULT false,
+  italic_description    boolean NOT NULL DEFAULT false,
+  bold_title            boolean NOT NULL DEFAULT false,
+  bold_description      boolean NOT NULL DEFAULT false,
+  created_at            timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_wedding_locations_wedding_id ON wedding_locations (wedding_id);
 

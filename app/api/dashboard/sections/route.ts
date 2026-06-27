@@ -36,6 +36,7 @@ export async function PUT(req: NextRequest) {
       background_color?: string | null
       font_color?: string | null
       overlay_opacity?: number
+      contrast?: number
       visible?: boolean
     }[] = await req.json()
 
@@ -51,6 +52,7 @@ export async function PUT(req: NextRequest) {
               background_color = ${row.background_color ?? null},
               font_color       = ${row.font_color ?? null},
               overlay_opacity  = ${row.overlay_opacity ?? 0.32},
+              contrast         = ${row.contrast ?? 100},
               visible          = ${row.visible ?? true}
           WHERE id = ${row.id} AND wedding_id = ${session.weddingId}
           RETURNING *
@@ -60,13 +62,13 @@ export async function PUT(req: NextRequest) {
         const r = await sql`
           INSERT INTO section_config
             (wedding_id, section_key, sort_order, design, color_scheme,
-             background_url, background_color, font_color, overlay_opacity, visible)
+             background_url, background_color, font_color, overlay_opacity, contrast, visible)
           VALUES
             (${session.weddingId}, ${row.section_key}, ${row.sort_order},
              ${row.design ?? 'Classic'}, ${row.color_scheme ?? 'Gold'},
              ${row.background_url ?? null}, ${row.background_color ?? null},
              ${row.font_color ?? null}, ${row.overlay_opacity ?? 0.32},
-             ${row.visible ?? true})
+             ${row.contrast ?? 100}, ${row.visible ?? true})
           ON CONFLICT (wedding_id, section_key) DO UPDATE SET
             sort_order       = EXCLUDED.sort_order,
             design           = EXCLUDED.design,
@@ -75,6 +77,7 @@ export async function PUT(req: NextRequest) {
             background_color = EXCLUDED.background_color,
             font_color       = EXCLUDED.font_color,
             overlay_opacity  = EXCLUDED.overlay_opacity,
+            contrast         = EXCLUDED.contrast,
             visible          = EXCLUDED.visible
           RETURNING *
         `
